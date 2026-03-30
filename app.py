@@ -1,344 +1,248 @@
 import streamlit as st
+import random
+from datetime import datetime
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 
 st.set_page_config(page_title="Cyber Tabletop Exercise", layout="wide")
 
-# -------------------- STYLING --------------------
+# -------------------- HEADER --------------------
 st.markdown("""
 <style>
-.app-header {
-    width: 100%;
-    padding: 18px 0 8px 0;
-    margin-bottom: 30px;
-    border-bottom: 1px solid #e6e6e6;
-    text-align: center;
-}
-.app-header h1 {
-    font-size: 28px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    margin: 0;
-}
-.app-sub {
-    font-size: 13px;
-    color: #666;
-    margin-top: 4px;
-}
-.block-container {padding-top: 3rem;}
-.center-box {
-    max-width: 700px;
-    margin: auto;
-    text-align: center;
-}
+.center-box {max-width: 800px; margin: auto;}
+.block-container {padding-top: 2rem;}
 </style>
-
-<div class="app-header">
-    <h1>CGI Cybersecurity Table-Top Exercise</h1>
-    <div class="app-sub">Incident Response & Decision-Making Simulation</div>
+<div style="text-align:center; border-bottom:1px solid #ddd; margin-bottom:25px;">
+<h2>CGI Cybersecurity Table-Top Exercise</h2>
+<p>Incident Response & Decision-Making Simulation</p>
 </div>
 """, unsafe_allow_html=True)
 
-# -------------------- SESSION STATE --------------------
+# -------------------- SESSION --------------------
 if "stage" not in st.session_state:
     st.session_state.stage = -1
-    st.session_state.scores = {
-        "phishing": 0,
-        "response": 0,
-        "containment": 0,
-        "communication": 0,
-        "recovery": 0
-    }
+    st.session_state.name = ""
+    st.session_state.start_time = datetime.now()
+    st.session_state.scores = dict.fromkeys(
+        ["detection","response","containment","communication","recovery"], 0
+    )
+    st.session_state.answers = {}
 
-def next_stage():
+def advance():
     st.session_state.stage += 1
+    st.rerun()
 
 # -------------------- SIDEBAR --------------------
 def render_sidebar():
     if st.session_state.stage == -1:
         return
 
-    stages = [
-        ("Detection", "phishing"),
-        ("Response", "response"),
-        ("Containment", "containment"),
-        ("Communication", "communication"),
-        ("Recovery", "recovery"),
-    ]
-
     st.sidebar.title("Exercise Progress")
-    total_score = sum(st.session_state.scores.values())
-    st.sidebar.metric("Current Score", f"{total_score}/100")
+    st.sidebar.metric("Current Score", f"{sum(st.session_state.scores.values())}/100")
 
-    for i, (label, key) in enumerate(stages):
+    labels = ["Detection","Response","Containment","Communication","Recovery"]
+    for i, lbl in enumerate(labels):
         if st.session_state.stage > i:
-            st.sidebar.markdown(f"✅ **{label}**")
+            st.sidebar.markdown(f"✅ {lbl}")
         elif st.session_state.stage == i:
-            st.sidebar.markdown(f"🟡 **{label} (Current)**")
+            st.sidebar.markdown(f"🟡 {lbl} (Current)")
         else:
-            st.sidebar.markdown(f"⬜ {label}")
+            st.sidebar.markdown(f"⬜ {lbl}")
+
+# -------------------- ANALYSIS ENGINE --------------------
+def analyse_stage(stage, answer):
+    analysis = {
+        "detection": {
+            "Ignore": "Ignoring phishing indicators increases attacker dwell time and enables credential compromise.",
+            "Escalate to IT": "Correct escalation reduces attacker dwell time before lateral movement.",
+            "Inspect headers and link": "Strong technical validation that prevents credential harvesting."
+        },
+        "response": {
+            "Ignore": "Active attacker sessions remain operational without intervention.",
+            "Password reset": "Useful but incomplete if attacker session token remains valid.",
+            "Investigate session": "Proper scoping step before decisive action.",
+            "Disable account": "Immediate containment of compromised credentials."
+        },
+        "containment": {
+            "Wait": "Allows malware execution and internal propagation.",
+            "Notify IT": "Administrative step that does not stop spread.",
+            "Check logs": "Improves visibility but not containment.",
+            "Isolate machine": "Correct containment action preventing lateral movement."
+        },
+        "communication": {
+            "Monitor": "Passive stance during exfiltration increases damage.",
+            "Forensics": "Important but secondary to stopping data loss.",
+            "Block traffic": "Correct immediate action to protect data."
+        },
+        "recovery": {
+            "Delay": "Business disruption without improving security.",
+            "Notify execs": "Governance step but incomplete alone.",
+            "Legal/compliance": "Ensures regulatory and reputational protection.",
+            "Inform customers": "Premature before internal alignment."
+        }
+    }
+    return analysis[stage].get(answer, "No analysis available.")
 
 # -------------------- PDF --------------------
-def generate_pdf(total, feedback):
+def generate_pdf(total, classification):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer)
     styles = getSampleStyleSheet()
     story = []
 
     story.append(Paragraph("Cybersecurity Tabletop Exercise Report", styles['Title']))
-    story.append(Spacer(1, 12))
-    story.append(Paragraph(f"Overall Cyber Awareness Score: {total}/100", styles['Heading2']))
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1,12))
+    story.append(Paragraph(f"Participant: {st.session_state.name}", styles['Normal']))
+    story.append(Paragraph(f"Completed: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
+    story.append(Spacer(1,12))
+    story.append(Paragraph(f"Score: {total}/100", styles['Heading2']))
+    story.append(Paragraph(f"Classification: {classification}", styles['Heading3']))
+    story.append(Spacer(1,24))
 
-    for section, text in feedback.items():
-        story.append(Paragraph(section, styles['Heading3']))
-        story.append(Paragraph(text, styles['Normal']))
-        story.append(Spacer(1, 12))
+    for stage in ["detection","response","containment","communication","recovery"]:
+        answer = st.session_state.answers.get(stage, "No answer")
+        analysis = analyse_stage(stage, answer)
+
+        story.append(Paragraph(f"<b>{stage.capitalize()} Stage</b>", styles['Heading2']))
+        story.append(Paragraph(f"<b>Your decision:</b> {answer}", styles['Normal']))
+        story.append(Paragraph(f"<b>Impact analysis:</b> {analysis}", styles['Normal']))
+        story.append(Spacer(1,18))
 
     doc.build(story)
     buffer.seek(0)
     return buffer
 
-def section_feedback(score, good, mid, poor):
-    if score >= 18:
-        return good
-    elif score >= 10:
-        return mid
-    else:
-        return poor
+def classify(score):
+    if score >= 90: return "Incident Response Ready"
+    if score >= 70: return "Operationally Aware"
+    if score >= 50: return "Needs Procedural Reinforcement"
+    return "High Organisational Risk Profile"
 
-# -------------------- START PAGE --------------------
+# -------------------- START --------------------
 if st.session_state.stage == -1:
     st.markdown('<div class="center-box">', unsafe_allow_html=True)
-    st.write("""
-You are participating in a simulated cyber incident affecting your organisation.
-
-Across five stages, you will be required to make decisions that influence
-how the incident unfolds. Your choices will be evaluated for awareness,
-prioritisation, and adherence to cybersecurity best practices.
-""")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Start Exercise"):
-            st.session_state.stage = 0
-    with col2:
-        if st.button("Exit"):
-            st.stop()
+    st.session_state.name = st.text_input("Enter your name to begin:")
+    if st.button("Start Exercise") and st.session_state.name:
+        advance()
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------- DETECTION --------------------
 elif st.session_state.stage == 0:
     render_sidebar()
-    st.markdown('<div class="center-box">', unsafe_allow_html=True)
-    st.header("Detection Stage")
+    st.markdown("**08:42 — Detection Stage**")
 
-    st.write("""
-08:42 — An employee from HR forwards you an email asking if it is legitimate.
-The email claims to be from IT support requesting urgent credential verification
-due to suspicious activity. The link in the email redirects to an unfamiliar domain.
-""")
+    emails = [
+"""From: it-support@companny-secure.com
+Subject: Urgent Credential Verification
+Link: http://secure-company-login.co""",
+"""From: helpdesk@company-it.net
+Subject: Security Alert
+Link: http://verify-now-company.net"""
+    ]
+    st.code(random.choice(emails), language="text")
 
-    choice = st.radio(
-        "Your decision:",
-        [
-            "Ignore the report",
-            "Escalate the email to IT security",
-            "Examine the email headers and inspect the link destination"
-        ]
-    )
-
-    if st.button("Submit"):
-        st.session_state.scores["phishing"] = [4, 12, 20][
-            ["Ignore the report",
-             "Escalate the email to IT security",
-             "Examine the email headers and inspect the link destination"].index(choice)
-        ]
-        next_stage()
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.form("detection"):
+        choice = st.radio("Your decision:",
+            ["Ignore", "Escalate to IT", "Inspect headers and link"], index=None)
+        if st.form_submit_button("Submit") and choice:
+            st.session_state.scores["detection"] = [4,12,20][
+                ["Ignore","Escalate to IT","Inspect headers and link"].index(choice)]
+            st.session_state.answers["detection"] = choice
+            advance()
 
 # -------------------- RESPONSE --------------------
 elif st.session_state.stage == 1:
     render_sidebar()
-    st.markdown('<div class="center-box">', unsafe_allow_html=True)
-    st.header("Response Stage")
+    st.markdown("**08:55 — Response Stage**")
 
-    st.write("""
-08:55 — A SIEM alert indicates a successful login to the HR employee’s account
-from an IP address located overseas. This location does not match the user’s profile.
-""")
+    st.code("""SIEM LOG:
+User: hr.jane
+IP: 185.234.219.12 (RU)
+Status: Successful Login""")
 
-    choice = st.radio(
-        "What action do you take?",
-        [
-            "Ignore the alert as a false positive",
-            "Force a password reset",
-            "Investigate the login session activity",
-            "Disable the account immediately"
-        ]
-    )
-
-    scores = [3, 10, 15, 20]
-
-    if st.button("Submit"):
-        st.session_state.scores["response"] = scores[
-            ["Ignore the alert as a false positive",
-             "Force a password reset",
-             "Investigate the login session activity",
-             "Disable the account immediately"].index(choice)
-        ]
-        next_stage()
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.form("response"):
+        choice = st.radio("Action:",
+            ["Ignore", "Password reset", "Investigate session", "Disable account"], index=None)
+        if st.form_submit_button("Submit") and choice:
+            st.session_state.scores["response"] = [3,10,15,20][
+                ["Ignore","Password reset","Investigate session","Disable account"].index(choice)]
+            st.session_state.answers["response"] = choice
+            advance()
 
 # -------------------- CONTAINMENT --------------------
 elif st.session_state.stage == 2:
     render_sidebar()
-    st.markdown('<div class="center-box">', unsafe_allow_html=True)
-    st.header("Containment Stage")
+    st.markdown("**09:10 — Containment Stage**")
 
-    st.write("""
-09:10 — Multiple employees report receiving unusual internal emails from the HR user.
-The messages contain strange attachments and links.
-""")
+    st.code("""Email Header Extract:
+Received: unknown-mail.ru
+Attachment: payroll_update.xlsm""")
 
-    choice = st.radio(
-        "Your containment approach:",
-        [
-            "Wait for additional evidence",
-            "Notify IT teams",
-            "Inspect email server logs",
-            "Isolate the HR employee’s machine from the network"
-        ]
-    )
-
-    scores = [4, 10, 14, 20]
-
-    if st.button("Submit"):
-        st.session_state.scores["containment"] = scores[
-            ["Wait for additional evidence",
-             "Notify IT teams",
-             "Inspect email server logs",
-             "Isolate the HR employee’s machine from the network"].index(choice)
-        ]
-        next_stage()
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.form("containment"):
+        choice = st.radio("Containment approach:",
+            ["Wait", "Notify IT", "Check logs", "Isolate machine"], index=None)
+        if st.form_submit_button("Submit") and choice:
+            st.session_state.scores["containment"] = [4,10,14,20][
+                ["Wait","Notify IT","Check logs","Isolate machine"].index(choice)]
+            st.session_state.answers["containment"] = choice
+            advance()
 
 # -------------------- COMMUNICATION --------------------
 elif st.session_state.stage == 3:
     render_sidebar()
-    st.markdown('<div class="center-box">', unsafe_allow_html=True)
-    st.header("Communication Stage")
+    st.markdown("**09:25 — Communication Stage**")
 
-    st.write("""
-09:25 — Network monitoring detects unusually large outbound file transfers
-from internal servers to an unknown external destination.
-""")
+    st.code("""Network Alert:
+Outbound transfer 4.2GB → unknown external host""")
 
-    choice = st.radio(
-        "What do you prioritise?",
-        [
-            "Continue monitoring the activity",
-            "Launch forensic investigation",
-            "Block the outbound traffic immediately"
-        ]
-    )
-
-    scores = [6, 14, 20]
-
-    if st.button("Submit"):
-        st.session_state.scores["communication"] = scores[
-            ["Continue monitoring the activity",
-             "Launch forensic investigation",
-             "Block the outbound traffic immediately"].index(choice)
-        ]
-        next_stage()
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.form("communication"):
+        choice = st.radio("Priority:",
+            ["Monitor", "Forensics", "Block traffic"], index=None)
+        if st.form_submit_button("Submit") and choice:
+            st.session_state.scores["communication"] = [6,14,20][
+                ["Monitor","Forensics","Block traffic"].index(choice)]
+            st.session_state.answers["communication"] = choice
+            advance()
 
 # -------------------- RECOVERY --------------------
 elif st.session_state.stage == 4:
     render_sidebar()
-    st.markdown('<div class="center-box">', unsafe_allow_html=True)
-    st.header("Recovery Stage")
+    st.markdown("**10:00 — Recovery Stage**")
 
-    st.write("""
-10:00 — It is now evident the organisation has experienced a breach.
-Decisions must be made regarding governance and disclosure.
-""")
+    st.code("""Post-Incident Brief:
+Systems cleaned. Backups verified.
+Pressure from management to resume operations immediately.""")
 
-    choice = st.radio(
-        "Your governance decision:",
-        [
-            "Delay communication until more facts are known",
-            "Notify executives",
-            "Contact legal and compliance teams",
-            "Inform customers immediately"
-        ]
-    )
-
-    scores = [5, 14, 20, 10]
-
-    if st.button("Submit"):
-        st.session_state.scores["recovery"] = scores[
-            ["Delay communication until more facts are known",
-             "Notify executives",
-             "Contact legal and compliance teams",
-             "Inform customers immediately"].index(choice)
-        ]
-        next_stage()
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.form("recovery"):
+        choice = st.radio(
+            "What is the FIRST governance priority before restoring services?",
+            ["Delay", "Notify execs", "Legal/compliance", "Inform customers"],
+            index=None
+        )
+        if st.form_submit_button("Submit") and choice:
+            st.session_state.scores["recovery"] = [5,14,20,10][
+                ["Delay","Notify execs","Legal/compliance","Inform customers"].index(choice)]
+            st.session_state.answers["recovery"] = choice
+            advance()
 
 # -------------------- REPORT --------------------
 elif st.session_state.stage == 5:
-    render_sidebar()
-    st.markdown('<div class="center-box">', unsafe_allow_html=True)
-
-    st.title("Exercise Report")
-
     total = sum(st.session_state.scores.values())
-    st.write(f"Overall Cyber Awareness Score: {total}/100")
+    classification = classify(total)
 
-    feedback = {
-        "Phishing Recognition":
-        section_feedback(st.session_state.scores["phishing"],
-        "Excellent phishing recognition and proactive verification behaviour.",
-        "Reasonable action but relied on escalation rather than validation.",
-        "Phishing indicators were underestimated."),
+    st.title("Exercise Complete")
+    st.success("Your decisions reflect your incident response maturity.")
+    st.info("For detailed forensic feedback on each decision, download the PDF report below.")
 
-        "Incident Response":
-        section_feedback(st.session_state.scores["response"],
-        "You decisively removed attacker persistence.",
-        "Response was adequate but not immediate.",
-        "Delayed response allowed attacker activity."),
-
-        "Containment Strategy":
-        section_feedback(st.session_state.scores["containment"],
-        "Correct containment prevented further spread.",
-        "Investigation was prioritised over isolation.",
-        "Delayed containment increased internal risk."),
-
-        "Communication Handling":
-        section_feedback(st.session_state.scores["communication"],
-        "You prioritised data protection effectively.",
-        "Investigation occurred without immediate protection.",
-        "Monitoring exposed data to risk."),
-
-        "Recovery & Governance":
-        section_feedback(st.session_state.scores["recovery"],
-        "Proper governance procedures followed.",
-        "Partial governance action taken.",
-        "Delayed governance response increased risk.")
-    }
-
-    for k, v in feedback.items():
-        st.subheader(k)
-        st.write(v)
-
-    pdf = generate_pdf(total, feedback)
+    pdf = generate_pdf(total, classification)
     st.download_button("Download PDF Report", pdf, "tabletop_report.pdf")
 
-    if st.button("Restart"):
-        st.session_state.stage = -1
-        st.session_state.scores = {k: 0 for k in st.session_state.scores}
+    if st.button("Run Another Scenario"):
+        # reset state cleanly
+        st.session_state.stage = 0
+        for k in st.session_state.scores:
+            st.session_state.scores[k] = 0
+        st.session_state.answers = {}
+        st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
