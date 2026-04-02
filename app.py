@@ -705,7 +705,8 @@ def generate_certificate(name, role, score, classification):
         <font size="13" color="#1A1A1A"><b>{classification}</b></font><br/><br/>
         <font size="10" color="#888888">Completed: {datetime.now().strftime('%d %B %Y')}</font><br/>
         <font size="10" color="#888888">MITRE ATT&amp;CK Framework — Spearphishing Kill Chain (T1566.001)</font><br/><br/>
-        <font size="9" color="#aaaaaa">Issued by CGI Cybersecurity Practice &nbsp;|&nbsp; Confidential — Training Use Only</font>
+        <font size="9" color="#aaaaaa">Issued by CGI Cybersecurity Practice &nbsp;|&nbsp; Confidential — Training Use Only</font><br/>
+        <font size="9" color="#aaaaaa">Developed by 5yber &nbsp;|&nbsp; Delivered in partnership with CGI Cybersecurity Practice</font>
         </para>
     """, styles["Normal"])]]
 
@@ -840,6 +841,10 @@ def generate_pdf(total, classification):
     story.append(HRFlowable(width="100%", thickness=2, color=red, spaceAfter=6))
     story.append(Paragraph(
         "This report is confidential and produced for training purposes only. CGI Group Inc. — Cybersecurity Practice.",
+        label_style,
+    ))
+    story.append(Paragraph(
+        "Developed by 5yber &nbsp;|&nbsp; Delivered in partnership with CGI Cybersecurity Practice.",
         label_style,
     ))
 
