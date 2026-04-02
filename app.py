@@ -23,9 +23,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-CGI_LOGO_URL = "https://www.cgi.com/themes/custom/cgi_default/images/2021-revamp/cgi-logo.svg"
-CGI_RED      = "#DC1431"
-CGI_DARK     = "#1A1A1A"
+CGI_RED  = "#DC1431"
+CGI_DARK = "#1A1A1A"
 
 # ─────────────────────────────────────────────
 #  GLOBAL CSS
@@ -514,7 +513,10 @@ def render_header():
             <h1>Cybersecurity Tabletop Exercise</h1>
             <p>Spearphishing Incident Response Simulation &nbsp;|&nbsp; Confidential — Training Use Only</p>
         </div>
-        <img src="{CGI_LOGO_URL}" class="cgi-logo-img" alt="CGI Logo" onerror="this.style.display='none'"/>
+        <div>
+            <div class="cgi-logo-text">cgi</div>
+            <div class="cgi-logo-sub">Cybersecurity Practice</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -593,23 +595,11 @@ def render_stage(stage_idx):
         st.code(artifact_map[key], language="text")
 
     already_answered = st.session_state.showed_feedback[key]
-
-    if not already_answered:
-        remaining = render_timer(key)
-        if remaining == 0 and not already_answered:
-            # Auto-submit with lowest score on timeout
-            order   = st.session_state.shuffled_orders[key]
-            worst   = min(range(len(q["scores"])), key=lambda i: q["scores"][i])
-            st.session_state.scores[key]         = q["scores"][worst]
-            st.session_state.answers[key]        = "⏰ Time expired — no decision made"
-            st.session_state.answer_indices[key] = worst
-            st.session_state.showed_feedback[key] = True
-            st.rerun()
-        else:
-            st.empty()  # placeholder to allow rerun refresh
-
     order            = st.session_state.shuffled_orders[key]
     shuffled_options = [q["options"][i] for i in order]
+
+    # Timer placeholder — only rendered once, updated in loop below
+    timer_placeholder = st.empty()
 
     with st.form(key=f"form_{key}"):
         choice = st.radio(
@@ -634,11 +624,31 @@ def render_stage(stage_idx):
     if already_answered:
         render_feedback(key, st.session_state.answer_indices[key])
         st.button("Continue to Next Stage →", on_click=advance)
+    else:
+        # Timer loop — updates placeholder without re-rendering the form
+        if key not in st.session_state.stage_start_time:
+            st.session_state.stage_start_time[key] = time.time()
 
-    # Auto-refresh every second while timer is running
-    if not already_answered:
-        time.sleep(1)
-        st.rerun()
+        while True:
+            elapsed   = time.time() - st.session_state.stage_start_time[key]
+            remaining = max(0, TIMER_SECS - int(elapsed))
+            m, s      = divmod(remaining, 60)
+            css_class = "timer-critical" if remaining <= 10 else ("timer-warning" if remaining <= 20 else "")
+            timer_placeholder.markdown(f"""
+            <div class="timer-box">
+                ⏱ Time Remaining: <span class="{css_class}">{m:02d}:{s:02d}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if remaining == 0:
+                worst = min(range(len(q["scores"])), key=lambda i: q["scores"][i])
+                st.session_state.scores[key]          = q["scores"][worst]
+                st.session_state.answers[key]         = "⏰ Time expired — no decision made"
+                st.session_state.answer_indices[key]  = worst
+                st.session_state.showed_feedback[key] = True
+                st.rerun()
+
+            time.sleep(1)
 
 # ─────────────────────────────────────────────
 #  CERTIFICATE PDF
@@ -948,3 +958,4 @@ elif st.session_state.stage == 5:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
+        
