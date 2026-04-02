@@ -610,6 +610,11 @@ def render_stage(stage_idx):
     order            = st.session_state.shuffled_orders[key]
     shuffled_options = [q["options"][i] for i in order]
 
+    if already_answered:
+        render_feedback(key, st.session_state.answer_indices[key])
+        st.button("Continue to Next Stage →", on_click=advance)
+        return
+
     # Timer placeholder — only rendered once, updated in loop below
     timer_placeholder = st.empty()
 
@@ -618,14 +623,10 @@ def render_stage(stage_idx):
             "**Select your response:**",
             shuffled_options,
             index=None,
-            disabled=already_answered,
         )
-        submitted = st.form_submit_button(
-            "Submit Decision" if not already_answered else "Decision Submitted",
-            disabled=already_answered,
-        )
+        submitted = st.form_submit_button("Submit Decision")
 
-    if submitted and choice and not already_answered:
+    if submitted and choice:
         original_idx = order[shuffled_options.index(choice)]
         st.session_state.scores[key]          = q["scores"][original_idx]
         st.session_state.answers[key]         = choice
@@ -633,9 +634,8 @@ def render_stage(stage_idx):
         st.session_state.showed_feedback[key] = True
         st.rerun()
 
-    if already_answered:
-        render_feedback(key, st.session_state.answer_indices[key])
-        st.button("Continue to Next Stage →", on_click=advance)
+    if False:  # never reached, satisfies else block below
+        pass
     else:
         # Timer loop — updates placeholder without re-rendering the form
         if key not in st.session_state.stage_start_time:
@@ -970,4 +970,3 @@ elif st.session_state.stage == 5:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
-        
