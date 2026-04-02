@@ -384,6 +384,14 @@ QUESTIONS = {
 # ─────────────────────────────────────────────
 #  SESSION STATE INIT
 # ─────────────────────────────────────────────
+def build_shuffled_orders():
+    orders = {}
+    for key, q in QUESTIONS.items():
+        idx = list(range(len(q["options"])))
+        random.shuffle(idx)
+        orders[key] = idx
+    return orders
+
 def init_state():
     defaults = {
         "stage": -1,
@@ -395,6 +403,7 @@ def init_state():
         "answer_indices": {},
         "showed_feedback": dict.fromkeys(["detection", "response", "containment", "communication", "recovery"], False),
         "scenario": random.choice(list(SCENARIOS.keys())),
+        "shuffled_orders": build_shuffled_orders(),
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -510,11 +519,13 @@ def render_stage(stage_idx):
         st.code(artifact_map[key], language="text")
 
     already_answered = st.session_state.showed_feedback[key]
+    order = st.session_state.shuffled_orders[key]
+    shuffled_options = [q["options"][i] for i in order]
 
     with st.form(key=f"form_{key}"):
         choice = st.radio(
             "**Select your response:**",
-            q["options"],
+            shuffled_options,
             index=None,
             disabled=already_answered,
         )
@@ -524,10 +535,10 @@ def render_stage(stage_idx):
         )
 
     if submitted and choice and not already_answered:
-        idx = q["options"].index(choice)
-        st.session_state.scores[key]          = q["scores"][idx]
+        original_idx = order[shuffled_options.index(choice)]
+        st.session_state.scores[key]          = q["scores"][original_idx]
         st.session_state.answers[key]         = choice
-        st.session_state.answer_indices[key]  = idx
+        st.session_state.answer_indices[key]  = original_idx
         st.session_state.showed_feedback[key] = True
         st.rerun()
 
