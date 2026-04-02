@@ -11,7 +11,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.pagesizes import A4
 from io import BytesIO
-import urllib.request
+import base64
 
 # ─────────────────────────────────────────────
 #  PAGE CONFIG
@@ -25,6 +25,16 @@ st.set_page_config(
 
 CGI_RED  = "#DC1431"
 CGI_DARK = "#1A1A1A"
+
+# Embed logo as base64 so it loads with no external dependency
+def get_logo_base64():
+    try:
+        with open("cgi_logo.jpg", "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        return None
+
+LOGO_B64 = get_logo_base64()
 
 # ─────────────────────────────────────────────
 #  GLOBAL CSS
@@ -507,16 +517,18 @@ def render_sidebar():
 #  HEADER
 # ─────────────────────────────────────────────
 def render_header():
+    if LOGO_B64:
+        logo_html = f'<img src="data:image/jpeg;base64,{LOGO_B64}" style="height:52px;border-radius:8px;" alt="CGI"/>'
+    else:
+        logo_html = f'<div class="cgi-logo-text">cgi</div><div class="cgi-logo-sub">Cybersecurity Practice</div>'
+
     st.markdown(f"""
     <div class="header-banner">
         <div class="header-text">
             <h1>Cybersecurity Tabletop Exercise</h1>
             <p>Spearphishing Incident Response Simulation &nbsp;|&nbsp; Confidential — Training Use Only</p>
         </div>
-        <div>
-            <div class="cgi-logo-text">cgi</div>
-            <div class="cgi-logo-sub">Cybersecurity Practice</div>
-        </div>
+        <div>{logo_html}</div>
     </div>
     """, unsafe_allow_html=True)
 
