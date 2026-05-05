@@ -770,43 +770,97 @@ def render_stage(stage_idx):
 # ─────────────────────────────────────────────
 #  PDF — CERTIFICATE
 # ─────────────────────────────────────────────
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import simpleSplit
+
 def generate_certificate(name, role, score, classification):
     buffer = BytesIO()
-    # Landscape A4
-    PAGE_W, PAGE_H = 297*mm, 210*mm
-    doc = SimpleDocTemplate(buffer, pagesize=(PAGE_W, PAGE_H),
-                            leftMargin=10*mm, rightMargin=10*mm,
-                            topMargin=10*mm,  bottomMargin=10*mm)
-    styles = getSampleStyleSheet()
+    PAGE_W, PAGE_H = 297*mm, 210*mm  # landscape A4
 
-    # One full-bleed cell that sits inside the page margins
-    full_page = Table([[Paragraph(f"""
-        <para align="center">
-        <font size="30" color="{CGI_RED}"><b>Certificate of Completion</b></font><br/><br/>
-        <font size="12" color="{C4}">CGI Cybersecurity Tabletop Exercise</font><br/>
-        <font size="10" color="{C4}">Spearphishing Incident Response Simulation</font><br/><br/>
-        <font size="11" color="{C5}">This certifies that</font><br/><br/>
-        <font size="24" color="#ffffff"><b>{name}</b></font><br/>
-        <font size="10" color="{C4}">{role if role else 'Participant'}</font><br/><br/>
-        <font size="11" color="{C5}">has successfully completed the exercise with a score of</font><br/><br/>
-        <font size="22" color="{CGI_RED}"><b>{score}/100</b></font><br/>
-        <font size="13" color="#ffffff"><b>{classification}</b></font><br/><br/>
-        <font size="10" color="{C4}">Completed: {datetime.now().strftime('%d %B %Y')}</font><br/>
-        <font size="10" color="{C4}">MITRE ATT&amp;CK Framework — Spearphishing Kill Chain (T1566.001)</font><br/><br/>
-        <font size="9" color="{C4}">Issued by CGI Cybersecurity Practice &nbsp;|&nbsp; Confidential — Training Use Only</font><br/>
-        <font size="9" color="{C4}">Developed by 5yber &nbsp;|&nbsp; Delivered in partnership with CGI Cybersecurity Practice</font>
-        </para>
-    """, styles["Normal"])]], colWidths=[PAGE_W - 20*mm], rowHeights=[PAGE_H - 20*mm])
+    c = canvas.Canvas(buffer, pagesize=(PAGE_W, PAGE_H))
 
-    full_page.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor(C1)),
-        ("BOX",           (0,0), (-1,-1), 5, colors.HexColor(CGI_RED)),
-        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
-        ("LEFTPADDING",   (0,0), (-1,-1), 30),
-        ("RIGHTPADDING",  (0,0), (-1,-1), 30),
-    ]))
+    # ── Full background ──
+    c.setFillColor(colors.HexColor(C1))
+    c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
 
-    doc.build([full_page])
+    # ── Red border ──
+    c.setStrokeColor(colors.HexColor(CGI_RED))
+    c.setLineWidth(5)
+    c.rect(8*mm, 8*mm, PAGE_W - 16*mm, PAGE_H - 16*mm, fill=0, stroke=1)
+
+    # ── Inner thin accent ──
+    c.setStrokeColor(colors.HexColor(C3))
+    c.setLineWidth(0.5)
+    c.rect(12*mm, 12*mm, PAGE_W - 24*mm, PAGE_H - 24*mm, fill=0, stroke=1)
+
+    cx = PAGE_W / 2  # horizontal centre
+    y  = PAGE_H - 35*mm
+
+    # ── Title ──
+    c.setFillColor(colors.HexColor(CGI_RED))
+    c.setFont("Helvetica-Bold", 30)
+    c.drawCentredString(cx, y, "Certificate of Completion")
+    y -= 12*mm
+
+    # ── Subtitle ──
+    c.setFillColor(colors.HexColor(C4))
+    c.setFont("Helvetica", 12)
+    c.drawCentredString(cx, y, "CGI Cybersecurity Tabletop Exercise")
+    y -= 5*mm
+    c.setFont("Helvetica", 10)
+    c.drawCentredString(cx, y, "Spearphishing Incident Response Simulation")
+    y -= 14*mm
+
+    # ── Awarded to ──
+    c.setFillColor(colors.HexColor(C5))
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(cx, y, "This certifies that")
+    y -= 12*mm
+
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica-Bold", 26)
+    c.drawCentredString(cx, y, name)
+    y -= 6*mm
+
+    if role:
+        c.setFillColor(colors.HexColor(C4))
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(cx, y, role)
+        y -= 8*mm
+    else:
+        y -= 4*mm
+
+    # ── Score statement ──
+    c.setFillColor(colors.HexColor(C5))
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(cx, y, "has successfully completed the exercise with a score of")
+    y -= 12*mm
+
+    c.setFillColor(colors.HexColor(CGI_RED))
+    c.setFont("Helvetica-Bold", 24)
+    c.drawCentredString(cx, y, f"{score}/100")
+    y -= 8*mm
+
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica-Bold", 13)
+    c.drawCentredString(cx, y, classification)
+    y -= 14*mm
+
+    # ── Footer ──
+    c.setFillColor(colors.HexColor(C4))
+    c.setFont("Helvetica", 10)
+    c.drawCentredString(cx, y, f"Completed: {datetime.now().strftime('%d %B %Y')}")
+    y -= 5*mm
+    c.drawCentredString(cx, y, "MITRE ATT&CK Framework — Spearphishing Kill Chain (T1566.001)")
+    y -= 9*mm
+
+    c.setFont("Helvetica", 9)
+    c.drawCentredString(cx, y, "Issued by CGI Cybersecurity Practice  |  Confidential — Training Use Only")
+    y -= 4.5*mm
+    c.drawCentredString(cx, y, "Developed by 5yber  |  Delivered in partnership with CGI Cybersecurity Practice")
+
+    c.showPage()
+    c.save()
     buffer.seek(0)
     return buffer
 
