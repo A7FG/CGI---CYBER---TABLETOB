@@ -379,8 +379,13 @@ hr {{ border-color: {C3} !important; }}
 /* ── Hide the keyboard_double icon / deploy button ── */
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
-header[data-testid="stHeader"] {{
+header[data-testid="stHeader"],
+button[kind="header"],
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {{
     display: none !important;
+    visibility: hidden !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -767,46 +772,40 @@ def render_stage(stage_idx):
 # ─────────────────────────────────────────────
 def generate_certificate(name, role, score, classification):
     buffer = BytesIO()
-    doc    = SimpleDocTemplate(buffer, pagesize=A4,
-                               leftMargin=25*mm, rightMargin=25*mm,
-                               topMargin=20*mm,  bottomMargin=20*mm)
+    # Landscape A4, no margins — the certificate IS the page
+    doc    = SimpleDocTemplate(buffer, pagesize=(297*mm, 210*mm),
+                               leftMargin=0, rightMargin=0,
+                               topMargin=0,  bottomMargin=0)
     styles = getSampleStyleSheet()
-    r      = colors.HexColor(CGI_RED)
-    navy   = colors.HexColor(C1)
-    teal   = colors.HexColor(C3)
-    light  = colors.HexColor(C5)
 
-    story = [Spacer(1, 10*mm)]
-
-    border_data = [[Paragraph(f"""
+    # Full-page coloured background as a single table cell
+    full_page = Table([[Paragraph(f"""
         <para align="center">
-        <font size="28" color="{CGI_RED}"><b>Certificate of Completion</b></font><br/><br/>
-        <font size="11" color="{C4}">CGI Cybersecurity Tabletop Exercise</font><br/>
-        <font size="10" color="{C4}">Spearphishing Incident Response Simulation</font><br/><br/>
+        <font size="32" color="{CGI_RED}"><b>Certificate of Completion</b></font><br/><br/>
+        <font size="12" color="{C4}">CGI Cybersecurity Tabletop Exercise</font><br/>
+        <font size="10" color="{C4}">Spearphishing Incident Response Simulation</font><br/><br/><br/>
         <font size="11" color="{C5}">This certifies that</font><br/><br/>
-        <font size="24" color="#ffffff"><b>{name}</b></font><br/>
+        <font size="26" color="#ffffff"><b>{name}</b></font><br/>
         <font size="10" color="{C4}">{role if role else 'Participant'}</font><br/><br/>
         <font size="11" color="{C5}">has successfully completed the exercise with a score of</font><br/><br/>
-        <font size="32" color="{CGI_RED}"><b>{score}/100</b></font><br/>
-        <font size="13" color="#ffffff"><b>{classification}</b></font><br/><br/>
+        <font size="22" color="{CGI_RED}"><b>{score}/100</b></font><br/>
+        <font size="13" color="#ffffff"><b>{classification}</b></font><br/><br/><br/>
         <font size="10" color="{C4}">Completed: {datetime.now().strftime('%d %B %Y')}</font><br/>
         <font size="10" color="{C4}">MITRE ATT&amp;CK Framework — Spearphishing Kill Chain (T1566.001)</font><br/><br/>
         <font size="9" color="{C4}">Issued by CGI Cybersecurity Practice &nbsp;|&nbsp; Confidential — Training Use Only</font><br/>
         <font size="9" color="{C4}">Developed by 5yber &nbsp;|&nbsp; Delivered in partnership with CGI Cybersecurity Practice</font>
         </para>
-    """, styles["Normal"])]]
+    """, styles["Normal"])]], colWidths=[297*mm], rowHeights=[210*mm])
 
-    bt = Table(border_data, colWidths=[160*mm])
-    bt.setStyle(TableStyle([
-        ("BOX",           (0,0), (-1,-1), 3,  r),
-        ("BACKGROUND",    (0,0), (-1,-1),     colors.HexColor(C2)),
-        ("TOPPADDING",    (0,0), (-1,-1), 24),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 24),
-        ("LEFTPADDING",   (0,0), (-1,-1), 24),
-        ("RIGHTPADDING",  (0,0), (-1,-1), 24),
+    full_page.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor(C1)),
+        ("BOX",           (0,0), (-1,-1), 6, colors.HexColor(CGI_RED)),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("LEFTPADDING",   (0,0), (-1,-1), 30),
+        ("RIGHTPADDING",  (0,0), (-1,-1), 30),
     ]))
-    story.append(bt)
-    doc.build(story)
+
+    doc.build([full_page])
     buffer.seek(0)
     return buffer
 
@@ -828,13 +827,13 @@ def generate_pdf(total, classification):
     white  = colors.white
 
     title_style = ParagraphStyle("T2",  parent=styles["Title"],
-                                  textColor=r,     fontSize=20, spaceAfter=4)
+                                  textColor=r,                          fontSize=20, spaceAfter=4)
     h2_style    = ParagraphStyle("H2a", parent=styles["Heading2"],
-                                  textColor=r,     fontSize=13, spaceBefore=14, spaceAfter=4)
+                                  textColor=r,                          fontSize=13, spaceBefore=14, spaceAfter=4)
     body_style  = ParagraphStyle("B2",  parent=styles["Normal"],
-                                  textColor=c5,    fontSize=10, leading=15, spaceAfter=4)
+                                  textColor=colors.HexColor("#1f2937"), fontSize=10, leading=15, spaceAfter=4)
     label_style = ParagraphStyle("Lb",  parent=styles["Normal"],
-                                  textColor=c4,    fontSize=9)
+                                  textColor=colors.HexColor("#6b7280"), fontSize=9)
 
     story = []
     story.append(Paragraph("CGI Cybersecurity Tabletop Exercise", title_style))
@@ -853,11 +852,13 @@ def generate_pdf(total, classification):
     t.setStyle(TableStyle([
         ("FONTNAME",      (0,0), (-1,-1), "Helvetica"),
         ("FONTSIZE",      (0,0), (-1,-1), 10),
-        ("TEXTCOLOR",     (0,0), (0,-1),  c4),
-        ("TEXTCOLOR",     (1,0), (1,-1),  c5),
+        ("TEXTCOLOR",     (0,0), (0,-1),  colors.HexColor("#6b7280")),
+        ("TEXTCOLOR",     (1,0), (1,-1),  colors.HexColor("#1f2937")),
         ("FONTNAME",      (1,4), (1,5),   "Helvetica-Bold"),
-        ("BACKGROUND",    (0,0), (-1,-1), c1),
+        ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor("#f9fafb")),
         ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("TOPPADDING",    (0,0), (-1,-1), 5),
+        ("LEFTPADDING",   (0,0), (-1,-1), 8),
     ]))
     story.append(t)
     story.append(Spacer(1, 16))
@@ -874,10 +875,11 @@ def generate_pdf(total, classification):
         ("TEXTCOLOR",     (0,0), (-1,0),  white),
         ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
         ("FONTNAME",      (0,-1),(-1,-1), "Helvetica-Bold"),
-        ("TEXTCOLOR",     (0,1), (-1,-1), c5),
+        ("TEXTCOLOR",     (0,1), (-1,-1), colors.HexColor("#1f2937")),
         ("FONTSIZE",      (0,0), (-1,-1), 9),
-        ("ROWBACKGROUNDS",(0,1), (-1,-2), [c2, c1]),
-        ("GRID",          (0,0), (-1,-1), 0.5, c3),
+        ("ROWBACKGROUNDS",(0,1), (-1,-2), [colors.HexColor("#f9fafb"), colors.white]),
+        ("BACKGROUND",    (0,-1), (-1,-1), colors.HexColor("#fff0f3")),
+        ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#d1d5db")),
         ("BOTTOMPADDING", (0,0), (-1,-1), 5),
         ("TOPPADDING",    (0,0), (-1,-1), 5),
         ("LEFTPADDING",   (0,0), (-1,-1), 6),
@@ -896,9 +898,9 @@ def generate_pdf(total, classification):
         tid, tname         = MITRE_TAGS[key]
 
         ql   = {"correct": "✓ Optimal", "partial": "~ Adequate", "poor": "✗ Insufficient"}[quality]
-        qcol = {"correct": colors.HexColor("#34d399"),
-                "partial": colors.HexColor("#fbbf24"),
-                "poor":    colors.HexColor("#f87171")}[quality]
+        qcol = {"correct": colors.HexColor("#059669"),
+                "partial": colors.HexColor("#d97706"),
+                "poor":    colors.HexColor("#dc2626")}[quality]
 
         story.append(Paragraph(f"{label} Stage — {tid}: {tname}", h2_style))
         dt = Table([
@@ -909,14 +911,15 @@ def generate_pdf(total, classification):
         dt.setStyle(TableStyle([
             ("FONTNAME",      (0,0), (0,-1), "Helvetica-Bold"),
             ("FONTSIZE",      (0,0), (-1,-1), 9),
-            ("TEXTCOLOR",     (0,0), (0,-1),  c4),
-            ("TEXTCOLOR",     (1,0), (1,0),   c5),
+            ("TEXTCOLOR",     (0,0), (0,-1),  colors.HexColor("#6b7280")),
+            ("TEXTCOLOR",     (1,0), (1,0),   colors.HexColor("#1f2937")),
             ("TEXTCOLOR",     (1,1), (1,1),   qcol),
-            ("TEXTCOLOR",     (1,2), (1,2),   c5),
+            ("TEXTCOLOR",     (1,2), (1,2),   colors.HexColor("#1f2937")),
             ("FONTNAME",      (1,1), (1,1),   "Helvetica-Bold"),
-            ("BACKGROUND",    (0,0), (-1,-1), c2),
+            ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor("#f9fafb")),
             ("BOTTOMPADDING", (0,0), (-1,-1), 4),
             ("TOPPADDING",    (0,0), (-1,-1), 4),
+            ("LEFTPADDING",   (0,0), (-1,-1), 8),
         ]))
         story.append(dt)
         story.append(Spacer(1, 6))
