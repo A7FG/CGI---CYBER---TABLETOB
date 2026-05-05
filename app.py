@@ -412,7 +412,7 @@ div[data-testid="stForm"] {{
     font-weight: 600 !important;
 }}
 
-/* ── Code blocks (main area — cream on near-black for clear contrast) ── */
+/* ── Code blocks (main area — force white text everywhere) ── */
 .main code,
 .main pre,
 .main .stCode,
@@ -426,11 +426,29 @@ div[data-testid="stForm"] {{
     color: #ffffff !important;
     font-size: 0.85rem !important;
 }}
-.main [data-testid="stCodeBlock"] code span,
-.main pre code,
-.main pre code span {{
+
+/* ── Override syntax highlighter token colours ── */
+.main [data-testid="stCodeBlock"] *,
+.main pre *,
+.main pre code *,
+.main code * {{
     color: #ffffff !important;
     background: transparent !important;
+    background-color: transparent !important;
+    text-shadow: none !important;
+}}
+
+/* ── Copy button (top right of code blocks) ── */
+.main [data-testid="stCodeBlock"] button,
+.main [data-testid="stCodeBlock"] button svg,
+.main [data-testid="stCodeBlock"] button svg path {{
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    opacity: 0.7 !important;
+}}
+.main [data-testid="stCodeBlock"] button:hover {{
+    opacity: 1 !important;
+    background: rgba(255,255,255,0.1) !important;
 }}
 
 /* ── Sidebar inline code (high contrast on blue) ── */
