@@ -47,227 +47,307 @@ LOGO_B64 = get_logo_base64()
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <style>
-html, body, [class*="css"] {{
-    font-family: 'Segoe UI', sans-serif;
-    background-color: {BG_MAIN};
-    color: {TEXT_MAIN};
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Force light theme across entire app ── */
+html, body {{
+    background-color: #f7f8fc !important;
+    color: #1e1e2e !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewBlockContainer"],
+.main, .block-container {{
+    background-color: #f7f8fc !important;
+    font-family: 'Inter', sans-serif !important;
 }}
 .block-container {{
     max-width: 860px;
     padding: 2rem 2rem 4rem;
     margin: auto;
 }}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] > div {{
+    background-color: #ffffff !important;
+    border-right: 2px solid #e8eaf6 !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+[data-testid="stSidebar"] * {{
+    color: #1e1e2e !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+[data-testid="stSidebar"] h2 {{
+    color: {CGI_RED} !important;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}}
+[data-testid="stMetricLabel"] p,
+[data-testid="stMetricValue"] {{
+    color: #1e1e2e !important;
+}}
+
+/* ── All text elements ── */
+p, span, label, div, h1, h2, h3, h4, li {{
+    font-family: 'Inter', sans-serif !important;
+    color: #1e1e2e;
+}}
+
+/* ── Header banner ── */
 .header-banner {{
-    background: {BG_HEADER};
-    border: 1px solid {BORDER};
+    background: linear-gradient(120deg, #ffffff 60%, #fff0f3 100%);
+    border: 1px solid #ffd6dd;
     border-top: 5px solid {CGI_RED};
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 1.6rem 2.5rem;
     margin-bottom: 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 16px rgba(220,20,49,0.08);
 }}
 .header-text h1 {{
     font-size: 1.5rem;
-    font-weight: 700;
-    color: {TEXT_MAIN};
+    font-weight: 800;
+    color: #1e1e2e !important;
     margin: 0 0 0.2rem;
+    font-family: 'Inter', sans-serif !important;
 }}
 .header-text p {{
     font-size: 0.85rem;
-    color: {TEXT_SUB};
+    color: #6b7280 !important;
     margin: 0;
 }}
-.cgi-logo-text {{
-    font-size: 2rem;
-    font-weight: 900;
-    color: {CGI_RED};
-    letter-spacing: -0.05em;
-    font-family: 'Segoe UI', sans-serif;
-    line-height: 1;
-}}
-.cgi-logo-sub {{
-    font-size: 0.55rem;
-    color: #aaaaaa;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    text-align: right;
-    margin-top: 2px;
-}}
+
+/* ── Stage card ── */
 .stage-card {{
-    background: {BG_CARD};
-    border: 1px solid {BORDER};
+    background: #ffffff;
+    border: 1px solid #e8eaf6;
     border-left: 5px solid {CGI_RED};
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }}
 .stage-card h3 {{
-    color: {CGI_RED};
+    color: {CGI_RED} !important;
     margin: 0 0 0.4rem;
-    font-size: 1.05rem;
+    font-size: 1rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    font-family: 'Inter', sans-serif !important;
 }}
 .stage-card .timestamp {{
-    color: #e07b00;
-    font-size: 0.85rem;
+    color: #f59e0b !important;
+    font-size: 0.82rem;
     font-family: monospace;
     margin-bottom: 0.8rem;
+    font-weight: 600;
 }}
 .stage-card p {{
-    color: {TEXT_SUB};
-    font-size: 0.95rem;
-    line-height: 1.6;
+    color: #374151 !important;
+    font-size: 0.94rem;
+    line-height: 1.7;
     margin: 0;
 }}
+
+/* ── MITRE tag ── */
 .mitre-tag {{
     display: inline-block;
     background: #fff0f3;
-    border: 1px solid {CGI_RED};
-    color: {CGI_RED};
-    border-radius: 4px;
-    padding: 0.15rem 0.6rem;
+    border: 1.5px solid {CGI_RED};
+    color: {CGI_RED} !important;
+    border-radius: 6px;
+    padding: 0.2rem 0.7rem;
     font-size: 0.75rem;
     font-family: monospace;
     margin-bottom: 1rem;
+    font-weight: 700;
 }}
+
+/* ── Feedback boxes ── */
 .feedback-box {{
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 1.2rem 1.5rem;
     margin: 1rem 0;
     font-size: 0.92rem;
-    line-height: 1.6;
+    line-height: 1.7;
+    font-family: 'Inter', sans-serif !important;
 }}
 .feedback-correct {{
-    background: #f0fdf4;
-    border: 1px solid #86efac;
-    color: #166534;
+    background: #ecfdf5;
+    border: 1.5px solid #6ee7b7;
+    color: #065f46 !important;
 }}
 .feedback-partial {{
     background: #fffbeb;
-    border: 1px solid #fcd34d;
-    color: #92400e;
+    border: 1.5px solid #fcd34d;
+    color: #92400e !important;
 }}
 .feedback-poor {{
     background: #fff1f2;
-    border: 1px solid #fca5a5;
-    color: #991b1b;
+    border: 1.5px solid #fca5a5;
+    color: #991b1b !important;
 }}
+
+/* ── Timer ── */
 .timer-box {{
-    background: {BG_CARD};
-    border: 1px solid {BORDER};
-    border-radius: 8px;
-    padding: 0.6rem 1.2rem;
+    background: #ffffff;
+    border: 1.5px solid #e8eaf6;
+    border-radius: 10px;
+    padding: 0.6rem 1.4rem;
     font-size: 1rem;
     font-family: monospace;
-    color: {TEXT_MAIN};
-    margin-bottom: 1rem;
+    color: #1e1e2e !important;
+    margin-bottom: 1.2rem;
     display: inline-block;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    font-weight: 700;
 }}
-.timer-warning {{ color: #d97706 !important; font-weight: 700; }}
-.timer-critical {{ color: {CGI_RED} !important; font-weight: 700; }}
+.timer-warning {{ color: #d97706 !important; font-weight: 800; }}
+.timer-critical {{ color: {CGI_RED} !important; font-weight: 800; }}
+
+/* ── Result card ── */
 .result-card {{
-    background: {BG_CARD};
-    border: 1px solid {BORDER};
-    border-radius: 12px;
-    padding: 2rem;
+    background: #ffffff;
+    border: 1px solid #e8eaf6;
+    border-radius: 14px;
+    padding: 2.5rem 2rem;
     text-align: center;
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
 }}
 .result-card .big-score {{
-    font-size: 4rem;
+    font-size: 4.5rem;
     font-weight: 800;
-    color: {CGI_RED};
+    color: {CGI_RED} !important;
     line-height: 1;
+    font-family: 'Inter', sans-serif !important;
 }}
 .result-card .classification {{
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-top: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 0.6rem;
+    font-family: 'Inter', sans-serif !important;
 }}
 .result-card .sub {{
     font-size: 0.88rem;
-    color: {TEXT_SUB};
-    margin-top: 0.3rem;
+    color: #6b7280 !important;
+    margin-top: 0.4rem;
 }}
+
+/* ── Decision rows ── */
 .decision-row {{
-    background: {BG_CARD};
-    border: 1px solid {BORDER};
-    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #e8eaf6;
+    border-radius: 10px;
     padding: 1rem 1.4rem;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0.6rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    color: #1e1e2e !important;
 }}
+
+/* ── Certificate banner ── */
 .cert-banner {{
-    background: linear-gradient(135deg, #fff0f3, #ffe4e8);
+    background: linear-gradient(135deg, #fff0f3 0%, #ffe4e8 100%);
     border: 2px solid {CGI_RED};
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 2rem;
     text-align: center;
     margin: 1.5rem 0;
 }}
 .cert-banner h2 {{
-    color: {CGI_RED};
-    font-size: 1.3rem;
+    color: {CGI_RED} !important;
+    font-size: 1.4rem;
     margin: 0 0 0.5rem;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800;
 }}
 .cert-banner p {{
-    color: {TEXT_SUB};
+    color: #374151 !important;
     margin: 0;
     font-size: 0.95rem;
 }}
-[data-testid="stSidebar"] {{
-    background: #ffffff;
-    border-right: 1px solid {BORDER};
-}}
-[data-testid="stSidebar"] h2 {{
-    color: {CGI_RED};
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-}}
+
+/* ── Streamlit widgets ── */
 div[data-testid="stForm"] {{
-    background: transparent;
-    border: none;
+    background: transparent !important;
+    border: none !important;
     padding: 0;
 }}
-.stRadio label {{ color: {TEXT_MAIN} !important; }}
-.stButton > button {{
-    background: {CGI_RED};
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1.8rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
+.stRadio label,
+.stRadio div {{
+    color: #1e1e2e !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.95rem !important;
 }}
-.stButton > button:hover {{ background: #b01228; }}
+.stButton > button {{
+    background: {CGI_RED} !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.55rem 2rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    font-family: 'Inter', sans-serif !important;
+    box-shadow: 0 2px 8px rgba(220,20,49,0.25) !important;
+    transition: all 0.2s !important;
+}}
+.stButton > button:hover {{
+    background: #b01228 !important;
+    box-shadow: 0 4px 14px rgba(220,20,49,0.35) !important;
+    transform: translateY(-1px);
+}}
 .stTextInput > div > div > input {{
-    background: #ffffff;
-    color: {TEXT_MAIN};
-    border: 1px solid {BORDER};
-    border-radius: 6px;
+    background: #ffffff !important;
+    color: #1e1e2e !important;
+    border: 1.5px solid #e8eaf6 !important;
+    border-radius: 8px !important;
+    font-family: 'Inter', sans-serif !important;
+}}
+.stTextInput label {{
+    color: #1e1e2e !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
 }}
 code, pre {{
-    background: #f8fafc !important;
-    border: 1px solid {BORDER};
-    border-radius: 6px;
+    background: #f3f4f6 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
     color: #be185d !important;
     font-size: 0.85rem !important;
 }}
-hr {{ border-color: {BORDER}; }}
+[data-testid="stMarkdownContainer"] p {{
+    color: #1e1e2e !important;
+}}
+hr {{ border-color: #e8eaf6 !important; }}
+.stAlert {{
+    background: #fff0f3 !important;
+    border: 1px solid #fca5a5 !important;
+    color: #1e1e2e !important;
+    border-radius: 8px !important;
+}}
+.stInfo {{
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1e1e2e !important;
+}}
+[data-testid="stMetricValue"] > div {{
+    color: {CGI_RED} !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+}}
+[data-testid="stMetricLabel"] > div {{
+    color: #6b7280 !important;
+    font-family: 'Inter', sans-serif !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
