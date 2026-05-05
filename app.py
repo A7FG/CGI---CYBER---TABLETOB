@@ -9,6 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from io import BytesIO
 import base64
 
@@ -22,13 +23,22 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Colour palette (Cosmic Artistry) ──
-C1  = "#212A31"   # dark navy
-C2  = "#2E3944"   # deep teal-grey
-C3  = "#124E66"   # vivid teal
-C4  = "#748D92"   # muted blue-grey
-C5  = "#D3D9D4"   # light grey
-CGI_RED = "#DC1431"
+# ─────────────────────────────────────────────
+#  COLOUR PALETTE — Artsy & Creative
+# ─────────────────────────────────────────────
+GOLD     = "#D79922"
+CREAM    = "#EFE2BA"
+ORANGE   = "#F13C20"
+BLUE     = "#4056A1"
+LAVENDER = "#C5CBE3"
+CGI_RED  = "#DC1431"
+
+# Derived shades
+TEXT_DARK   = "#1a1d2e"
+TEXT_MUTED  = "#5a6b7d"
+BG_PAGE     = "#fafaf6"
+BG_CARD     = "#ffffff"
+BORDER_SOFT = "#e6e7eb"
 
 # ─────────────────────────────────────────────
 #  LOGO
@@ -50,66 +60,96 @@ st.markdown(f"""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 html, body {{
-    background-color: {C1} !important;
-    color: {C5} !important;
+    background-color: {BG_PAGE} !important;
+    color: {TEXT_DARK} !important;
     font-family: 'Inter', sans-serif !important;
 }}
 [data-testid="stAppViewContainer"],
 [data-testid="stAppViewBlockContainer"],
 .main {{
-    background-color: {C1} !important;
+    background-color: {BG_PAGE} !important;
     font-family: 'Inter', sans-serif !important;
 }}
 .block-container {{
     max-width: 860px;
     padding: 2rem 2rem 4rem;
     margin: auto;
-    background-color: {C1} !important;
+    background-color: {BG_PAGE} !important;
 }}
 
 /* ── Sidebar ── */
 [data-testid="stSidebar"] > div:first-child {{
-    background-color: {C2} !important;
-    border-right: 2px solid {C3} !important;
+    background-color: {BLUE} !important;
+    border-right: 4px solid {GOLD} !important;
 }}
-[data-testid="stSidebar"] * {{
-    color: {C5} !important;
+[data-testid="stSidebar"] *,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] li {{
+    color: {LAVENDER} !important;
     font-family: 'Inter', sans-serif !important;
 }}
+[data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
 [data-testid="stSidebar"] strong {{
     color: #ffffff !important;
 }}
+[data-testid="stSidebar"] code {{
+    background: rgba(255,255,255,0.15) !important;
+    color: {CREAM} !important;
+    border: none !important;
+    padding: 0.1rem 0.4rem !important;
+}}
 [data-testid="stMetricValue"] > div {{
-    color: #ffffff !important;
+    color: {CREAM} !important;
     font-weight: 800 !important;
 }}
 [data-testid="stMetricLabel"] > div {{
-    color: {C4} !important;
+    color: {LAVENDER} !important;
 }}
 [data-testid="stSidebarNav"] {{ display: none !important; }}
 
-/* ── General text ── */
-p, span, div, label, li {{
+/* ── Hide sidebar collapse arrow / header decoration ── */
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"],
+header[data-testid="stHeader"],
+button[kind="header"],
+button[data-testid="baseButton-header"] {{
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+}}
+
+/* ── Body text ── */
+p, span, label, li {{
     font-family: 'Inter', sans-serif !important;
-    color: {C5};
+    color: {TEXT_DARK};
 }}
 h1, h2, h3, h4 {{
     font-family: 'Inter', sans-serif !important;
-    color: #ffffff;
+    color: {TEXT_DARK};
 }}
 [data-testid="stMarkdownContainer"] p {{
-    color: {C5} !important;
+    color: {TEXT_DARK} !important;
 }}
 [data-testid="stMarkdownContainer"] strong {{
-    color: #ffffff !important;
+    color: {TEXT_DARK} !important;
+    font-weight: 700;
 }}
 
 /* ── Header banner ── */
 .header-banner {{
-    background: linear-gradient(120deg, {C2} 0%, {C3} 100%);
-    border: 1px solid {C3};
-    border-top: 5px solid {CGI_RED};
+    background: linear-gradient(120deg, {BLUE} 0%, #2f4082 100%);
+    border: 1px solid {BLUE};
+    border-top: 5px solid {ORANGE};
     border-radius: 14px;
     padding: 1.6rem 2.5rem;
     margin-bottom: 2rem;
@@ -117,7 +157,7 @@ h1, h2, h3, h4 {{
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(64,86,161,0.2);
 }}
 .header-text h1 {{
     font-size: 1.5rem;
@@ -127,22 +167,22 @@ h1, h2, h3, h4 {{
 }}
 .header-text p {{
     font-size: 0.85rem;
-    color: {C5} !important;
+    color: {LAVENDER} !important;
     margin: 0;
 }}
 
 /* ── Stage card ── */
 .stage-card {{
-    background: {C2};
-    border: 1px solid {C3};
-    border-left: 5px solid {CGI_RED};
+    background: {BG_CARD};
+    border: 1px solid {BORDER_SOFT};
+    border-left: 5px solid {ORANGE};
     border-radius: 12px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }}
 .stage-card h3 {{
-    color: {CGI_RED} !important;
+    color: {ORANGE} !important;
     margin: 0 0 0.4rem;
     font-size: 1rem;
     font-weight: 700;
@@ -150,14 +190,14 @@ h1, h2, h3, h4 {{
     letter-spacing: 0.08em;
 }}
 .stage-card .timestamp {{
-    color: #f59e0b !important;
+    color: {GOLD} !important;
     font-size: 0.82rem;
     font-family: monospace;
     margin-bottom: 0.8rem;
-    font-weight: 600;
+    font-weight: 700;
 }}
 .stage-card p {{
-    color: {C5} !important;
+    color: {TEXT_DARK} !important;
     font-size: 0.94rem;
     line-height: 1.7;
     margin: 0;
@@ -166,11 +206,11 @@ h1, h2, h3, h4 {{
 /* ── MITRE tag ── */
 .mitre-tag {{
     display: inline-block;
-    background: {C3};
-    border: 1.5px solid {C4};
+    background: {BLUE};
+    border: none;
     color: #ffffff !important;
     border-radius: 6px;
-    padding: 0.2rem 0.8rem;
+    padding: 0.25rem 0.8rem;
     font-size: 0.75rem;
     font-family: monospace;
     margin-bottom: 1rem;
@@ -187,101 +227,103 @@ h1, h2, h3, h4 {{
     line-height: 1.7;
 }}
 .feedback-correct {{
-    background: #0d3320;
-    border: 1.5px solid #34d399;
-    color: #6ee7b7 !important;
+    background: #ecfdf5;
+    border: 1.5px solid #10b981;
+    color: #064e3b !important;
 }}
+.feedback-correct strong {{ color: #065f46 !important; }}
 .feedback-partial {{
-    background: #2d2000;
-    border: 1.5px solid #fbbf24;
-    color: #fde68a !important;
+    background: {CREAM};
+    border: 1.5px solid {GOLD};
+    color: #78350f !important;
 }}
+.feedback-partial strong {{ color: #78350f !important; }}
 .feedback-poor {{
-    background: #2d0a0a;
-    border: 1.5px solid {CGI_RED};
-    color: #fca5a5 !important;
+    background: #fef2f2;
+    border: 1.5px solid {ORANGE};
+    color: #7f1d1d !important;
 }}
+.feedback-poor strong {{ color: #7f1d1d !important; }}
 
 /* ── Timer ── */
 .timer-box {{
-    background: {C2};
-    border: 1.5px solid {C3};
+    background: {BG_CARD};
+    border: 1.5px solid {LAVENDER};
     border-radius: 10px;
     padding: 0.6rem 1.4rem;
     font-size: 1rem;
     font-family: monospace;
-    color: #ffffff !important;
+    color: {TEXT_DARK} !important;
     margin-bottom: 1.2rem;
     display: inline-block;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     font-weight: 700;
 }}
-.timer-warning {{ color: #fbbf24 !important; font-weight: 800; }}
-.timer-critical {{ color: {CGI_RED} !important; font-weight: 800; }}
+.timer-warning {{ color: {GOLD} !important; font-weight: 800; }}
+.timer-critical {{ color: {ORANGE} !important; font-weight: 800; }}
 
 /* ── Result card ── */
 .result-card {{
-    background: {C2};
-    border: 1px solid {C3};
+    background: {BG_CARD};
+    border: 1px solid {BORDER_SOFT};
     border-radius: 14px;
     padding: 2.5rem 2rem;
     text-align: center;
     margin-bottom: 1.5rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }}
 .result-card .big-score {{
     font-size: 4.5rem;
     font-weight: 800;
-    color: {CGI_RED} !important;
+    color: {ORANGE} !important;
     line-height: 1;
 }}
 .result-card .classification {{
     font-size: 1.25rem;
     font-weight: 700;
     margin-top: 0.6rem;
-    color: #ffffff !important;
 }}
 .result-card .sub {{
     font-size: 0.88rem;
-    color: {C4} !important;
+    color: {TEXT_MUTED} !important;
     margin-top: 0.4rem;
 }}
 
 /* ── Decision rows ── */
 .decision-row {{
-    background: {C2};
-    border: 1px solid {C3};
+    background: {BG_CARD};
+    border: 1px solid {BORDER_SOFT};
     border-radius: 10px;
     padding: 1rem 1.4rem;
     margin-bottom: 0.6rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: {C5} !important;
+    color: {TEXT_DARK} !important;
 }}
 
 /* ── Certificate banner ── */
 .cert-banner {{
-    background: linear-gradient(135deg, {C2} 0%, {C3} 100%);
-    border: 2px solid {CGI_RED};
+    background: linear-gradient(135deg, {CREAM} 0%, #f4ecc9 100%);
+    border: 2px solid {GOLD};
     border-radius: 14px;
     padding: 2rem;
     text-align: center;
     margin: 1.5rem 0;
 }}
 .cert-banner h2 {{
-    color: #ffffff !important;
+    color: {ORANGE} !important;
     font-size: 1.4rem;
     margin: 0 0 0.5rem;
     font-weight: 800;
 }}
 .cert-banner p {{
-    color: {C5} !important;
+    color: #78350f !important;
     margin: 0;
     font-size: 0.95rem;
 }}
 
-/* ── Streamlit widgets ── */
+/* ── Streamlit form ── */
 div[data-testid="stForm"] {{
     background: transparent !important;
     border: none !important;
@@ -289,23 +331,17 @@ div[data-testid="stForm"] {{
 }}
 .stRadio label,
 .stRadio > div > label {{
-    color: {C5} !important;
+    color: {TEXT_DARK} !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 0.95rem !important;
 }}
-.stRadio > div {{
-    gap: 0.5rem;
-}}
+.stRadio > div {{ gap: 0.5rem; }}
 
-/* ── Button fix — ensure text is always visible ── */
+/* ── Buttons (Submit / Begin / Continue) ── */
 .stButton > button,
-.stButton > button p,
-.stButton > button span,
-.stFormSubmitButton > button,
-.stFormSubmitButton > button p,
-.stFormSubmitButton > button span {{
-    background: {CGI_RED} !important;
-    background-color: {CGI_RED} !important;
+.stFormSubmitButton > button {{
+    background: {ORANGE} !important;
+    background-color: {ORANGE} !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
@@ -313,80 +349,93 @@ div[data-testid="stForm"] {{
     font-size: 0.95rem !important;
     font-weight: 700 !important;
     font-family: 'Inter', sans-serif !important;
-    box-shadow: 0 2px 8px rgba(220,20,49,0.4) !important;
+    box-shadow: 0 3px 10px rgba(241,60,32,0.35) !important;
+    transition: all 0.2s !important;
+}}
+.stButton > button p,
+.stButton > button span,
+.stButton > button div,
+.stFormSubmitButton > button p,
+.stFormSubmitButton > button span,
+.stFormSubmitButton > button div {{
+    color: #ffffff !important;
 }}
 .stButton > button:hover,
 .stFormSubmitButton > button:hover {{
-    background: #b01228 !important;
-    background-color: #b01228 !important;
+    background: #d12d12 !important;
+    background-color: #d12d12 !important;
     color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(241,60,32,0.45) !important;
 }}
 .stButton > button:disabled,
 .stFormSubmitButton > button:disabled {{
-    background: {C3} !important;
-    background-color: {C3} !important;
-    color: {C4} !important;
-    opacity: 0.7 !important;
+    background: {LAVENDER} !important;
+    background-color: {LAVENDER} !important;
+    color: {TEXT_MUTED} !important;
+    opacity: 0.8 !important;
+    box-shadow: none !important;
 }}
 
-/* ── Download button ── */
+/* ── Download buttons ── */
 .stDownloadButton > button,
-.stDownloadButton > button p {{
-    background: {C3} !important;
+.stDownloadButton > button p,
+.stDownloadButton > button span {{
+    background: {BLUE} !important;
+    background-color: {BLUE} !important;
     color: #ffffff !important;
-    border: 1px solid {C4} !important;
+    border: none !important;
     border-radius: 8px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 3px 10px rgba(64,86,161,0.3) !important;
 }}
 .stDownloadButton > button:hover {{
-    background: {C2} !important;
-    border-color: #ffffff !important;
+    background: #2f4082 !important;
+    background-color: #2f4082 !important;
 }}
 
 /* ── Text input ── */
 .stTextInput > div > div > input {{
-    background: {C2} !important;
-    color: #ffffff !important;
-    border: 1.5px solid {C3} !important;
+    background: {BG_CARD} !important;
+    color: {TEXT_DARK} !important;
+    border: 1.5px solid {LAVENDER} !important;
     border-radius: 8px !important;
     font-family: 'Inter', sans-serif !important;
 }}
+.stTextInput > div > div > input:focus {{
+    border-color: {BLUE} !important;
+    box-shadow: 0 0 0 2px rgba(64,86,161,0.2) !important;
+}}
 .stTextInput label,
 .stTextInput > label {{
-    color: {C5} !important;
+    color: {TEXT_DARK} !important;
     font-weight: 600 !important;
 }}
 
 /* ── Code blocks ── */
-code, pre, .stCode {{
-    background: {C2} !important;
-    border: 1px solid {C3} !important;
+code, pre, .stCode, .stCode pre {{
+    background: #1e1e2e !important;
+    border: 1px solid {BLUE} !important;
     border-radius: 8px !important;
-    color: {C5} !important;
+    color: {CREAM} !important;
     font-size: 0.85rem !important;
 }}
+code {{
+    color: {CREAM} !important;
+}}
 
-/* ── Alert / info ── */
+/* ── Alerts ── */
 [data-testid="stAlert"] {{
-    background: {C2} !important;
-    border: 1px solid {C3} !important;
-    color: {C5} !important;
+    background: {CREAM} !important;
+    border: 1px solid {GOLD} !important;
+    color: {TEXT_DARK} !important;
     border-radius: 8px !important;
 }}
-
-hr {{ border-color: {C3} !important; }}
-
-/* ── Hide the keyboard_double icon / deploy button ── */
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-header[data-testid="stHeader"],
-button[kind="header"],
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"] {{
-    display: none !important;
-    visibility: hidden !important;
+[data-testid="stAlert"] p {{
+    color: #78350f !important;
 }}
+
+hr {{ border-color: {BORDER_SOFT} !important; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -660,7 +709,7 @@ def render_header():
     if LOGO_B64:
         logo_html = f'<img src="data:image/jpeg;base64,{LOGO_B64}" style="height:52px;border-radius:8px;" alt="CGI"/>'
     else:
-        logo_html = f'<div style="font-size:2rem;font-weight:900;color:#ffffff;letter-spacing:-0.05em;">CGI</div>'
+        logo_html = '<div style="font-size:2rem;font-weight:900;color:#ffffff;letter-spacing:-0.05em;">CGI</div>'
     st.markdown(f"""
     <div class="header-banner">
         <div class="header-text">
@@ -728,7 +777,6 @@ def render_stage(stage_idx):
         st.button("Continue to Next Stage →", on_click=advance)
         return
 
-    # Timer placeholder
     timer_ph = st.empty()
 
     with st.form(key=f"form_{key}"):
@@ -743,7 +791,6 @@ def render_stage(stage_idx):
         st.session_state.showed_feedback[key] = True
         st.rerun()
 
-    # Live countdown loop
     if key not in st.session_state.stage_start_time:
         st.session_state.stage_start_time[key] = time.time()
 
@@ -768,86 +815,90 @@ def render_stage(stage_idx):
         time.sleep(1)
 
 # ─────────────────────────────────────────────
-#  PDF — CERTIFICATE
+#  PDF — CERTIFICATE (Canvas-based, reliable)
 # ─────────────────────────────────────────────
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import simpleSplit
-
 def generate_certificate(name, role, score, classification):
     buffer = BytesIO()
     PAGE_W, PAGE_H = 297*mm, 210*mm  # landscape A4
 
     c = canvas.Canvas(buffer, pagesize=(PAGE_W, PAGE_H))
 
-    # ── Full background ──
-    c.setFillColor(colors.HexColor(C1))
+    # ── Background (cream) ──
+    c.setFillColor(colors.HexColor(CREAM))
     c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
 
-    # ── Red border ──
-    c.setStrokeColor(colors.HexColor(CGI_RED))
-    c.setLineWidth(5)
+    # ── Outer thick gold border ──
+    c.setStrokeColor(colors.HexColor(GOLD))
+    c.setLineWidth(6)
     c.rect(8*mm, 8*mm, PAGE_W - 16*mm, PAGE_H - 16*mm, fill=0, stroke=1)
 
-    # ── Inner thin accent ──
-    c.setStrokeColor(colors.HexColor(C3))
-    c.setLineWidth(0.5)
-    c.rect(12*mm, 12*mm, PAGE_W - 24*mm, PAGE_H - 24*mm, fill=0, stroke=1)
+    # ── Inner thin blue accent ──
+    c.setStrokeColor(colors.HexColor(BLUE))
+    c.setLineWidth(0.8)
+    c.rect(13*mm, 13*mm, PAGE_W - 26*mm, PAGE_H - 26*mm, fill=0, stroke=1)
 
-    cx = PAGE_W / 2  # horizontal centre
-    y  = PAGE_H - 35*mm
+    # ── Top corner accents ──
+    c.setFillColor(colors.HexColor(ORANGE))
+    c.rect(8*mm, PAGE_H - 14*mm, 60*mm, 6*mm, fill=1, stroke=0)
+    c.setFillColor(colors.HexColor(BLUE))
+    c.rect(PAGE_W - 68*mm, 8*mm, 60*mm, 6*mm, fill=1, stroke=0)
+
+    cx = PAGE_W / 2
+    y  = PAGE_H - 38*mm
 
     # ── Title ──
-    c.setFillColor(colors.HexColor(CGI_RED))
+    c.setFillColor(colors.HexColor(ORANGE))
     c.setFont("Helvetica-Bold", 30)
     c.drawCentredString(cx, y, "Certificate of Completion")
     y -= 12*mm
 
-    # ── Subtitle ──
-    c.setFillColor(colors.HexColor(C4))
-    c.setFont("Helvetica", 12)
+    # ── Subtitles ──
+    c.setFillColor(colors.HexColor(BLUE))
+    c.setFont("Helvetica-Bold", 12)
     c.drawCentredString(cx, y, "CGI Cybersecurity Tabletop Exercise")
     y -= 5*mm
+    c.setFillColor(colors.HexColor(TEXT_MUTED))
     c.setFont("Helvetica", 10)
     c.drawCentredString(cx, y, "Spearphishing Incident Response Simulation")
     y -= 14*mm
 
     # ── Awarded to ──
-    c.setFillColor(colors.HexColor(C5))
-    c.setFont("Helvetica", 11)
+    c.setFillColor(colors.HexColor(TEXT_DARK))
+    c.setFont("Helvetica-Oblique", 11)
     c.drawCentredString(cx, y, "This certifies that")
     y -= 12*mm
 
-    c.setFillColor(colors.white)
+    c.setFillColor(colors.HexColor(BLUE))
     c.setFont("Helvetica-Bold", 26)
     c.drawCentredString(cx, y, name)
     y -= 6*mm
 
     if role:
-        c.setFillColor(colors.HexColor(C4))
-        c.setFont("Helvetica", 10)
+        c.setFillColor(colors.HexColor(TEXT_MUTED))
+        c.setFont("Helvetica-Oblique", 10)
         c.drawCentredString(cx, y, role)
         y -= 8*mm
     else:
         y -= 4*mm
 
     # ── Score statement ──
-    c.setFillColor(colors.HexColor(C5))
+    c.setFillColor(colors.HexColor(TEXT_DARK))
     c.setFont("Helvetica", 11)
     c.drawCentredString(cx, y, "has successfully completed the exercise with a score of")
     y -= 12*mm
 
-    c.setFillColor(colors.HexColor(CGI_RED))
+    c.setFillColor(colors.HexColor(ORANGE))
     c.setFont("Helvetica-Bold", 24)
     c.drawCentredString(cx, y, f"{score}/100")
     y -= 8*mm
 
-    c.setFillColor(colors.white)
+    c.setFillColor(colors.HexColor(BLUE))
     c.setFont("Helvetica-Bold", 13)
     c.drawCentredString(cx, y, classification)
     y -= 14*mm
 
     # ── Footer ──
-    c.setFillColor(colors.HexColor(C4))
+    c.setFillColor(colors.HexColor(TEXT_MUTED))
     c.setFont("Helvetica", 10)
     c.drawCentredString(cx, y, f"Completed: {datetime.now().strftime('%d %B %Y')}")
     y -= 5*mm
@@ -865,7 +916,7 @@ def generate_certificate(name, role, score, classification):
     return buffer
 
 # ─────────────────────────────────────────────
-#  PDF — REPORT
+#  PDF — REPORT (white pages, dark text)
 # ─────────────────────────────────────────────
 def generate_pdf(total, classification):
     buffer = BytesIO()
@@ -873,27 +924,26 @@ def generate_pdf(total, classification):
                                leftMargin=20*mm, rightMargin=20*mm,
                                topMargin=20*mm,  bottomMargin=20*mm)
     styles = getSampleStyleSheet()
-    r      = colors.HexColor(CGI_RED)
-    c1     = colors.HexColor(C1)
-    c2     = colors.HexColor(C2)
-    c3     = colors.HexColor(C3)
-    c4     = colors.HexColor(C4)
-    c5     = colors.HexColor(C5)
-    white  = colors.white
 
-    title_style = ParagraphStyle("T2",  parent=styles["Title"],
-                                  textColor=r,                          fontSize=20, spaceAfter=4)
-    h2_style    = ParagraphStyle("H2a", parent=styles["Heading2"],
-                                  textColor=r,                          fontSize=13, spaceBefore=14, spaceAfter=4)
-    body_style  = ParagraphStyle("B2",  parent=styles["Normal"],
-                                  textColor=colors.HexColor("#1f2937"), fontSize=10, leading=15, spaceAfter=4)
-    label_style = ParagraphStyle("Lb",  parent=styles["Normal"],
-                                  textColor=colors.HexColor("#6b7280"), fontSize=9)
+    blue   = colors.HexColor(BLUE)
+    orange = colors.HexColor(ORANGE)
+    gold   = colors.HexColor(GOLD)
+    dark   = colors.HexColor(TEXT_DARK)
+    mute   = colors.HexColor(TEXT_MUTED)
+
+    title_style = ParagraphStyle("T", parent=styles["Title"],
+                                  textColor=blue,   fontSize=22, spaceAfter=4)
+    h2_style    = ParagraphStyle("H2", parent=styles["Heading2"],
+                                  textColor=orange, fontSize=13, spaceBefore=14, spaceAfter=4)
+    body_style  = ParagraphStyle("B", parent=styles["Normal"],
+                                  textColor=dark,   fontSize=10, leading=15, spaceAfter=4)
+    label_style = ParagraphStyle("L", parent=styles["Normal"],
+                                  textColor=mute,   fontSize=9)
 
     story = []
     story.append(Paragraph("CGI Cybersecurity Tabletop Exercise", title_style))
     story.append(Paragraph("Spearphishing Incident Response Simulation — Confidential Report", label_style))
-    story.append(HRFlowable(width="100%", thickness=2, color=r, spaceAfter=12))
+    story.append(HRFlowable(width="100%", thickness=2.5, color=orange, spaceAfter=12))
 
     meta = [
         ["Participant",     st.session_state.name],
@@ -907,10 +957,10 @@ def generate_pdf(total, classification):
     t.setStyle(TableStyle([
         ("FONTNAME",      (0,0), (-1,-1), "Helvetica"),
         ("FONTSIZE",      (0,0), (-1,-1), 10),
-        ("TEXTCOLOR",     (0,0), (0,-1),  colors.HexColor("#6b7280")),
-        ("TEXTCOLOR",     (1,0), (1,-1),  colors.HexColor("#1f2937")),
+        ("TEXTCOLOR",     (0,0), (0,-1),  mute),
+        ("TEXTCOLOR",     (1,0), (1,-1),  dark),
         ("FONTNAME",      (1,4), (1,5),   "Helvetica-Bold"),
-        ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor("#f9fafb")),
+        ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor("#fafaf6")),
         ("BOTTOMPADDING", (0,0), (-1,-1), 5),
         ("TOPPADDING",    (0,0), (-1,-1), 5),
         ("LEFTPADDING",   (0,0), (-1,-1), 8),
@@ -926,14 +976,14 @@ def generate_pdf(total, classification):
     chain_data.append(["TOTAL", "", "", str(total), "100"])
     ct = Table(chain_data, colWidths=[28*mm, 22*mm, 80*mm, 14*mm, 14*mm])
     ct.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0), (-1,0),  c3),
-        ("TEXTCOLOR",     (0,0), (-1,0),  white),
+        ("BACKGROUND",    (0,0), (-1,0),  blue),
+        ("TEXTCOLOR",     (0,0), (-1,0),  colors.white),
         ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
         ("FONTNAME",      (0,-1),(-1,-1), "Helvetica-Bold"),
-        ("TEXTCOLOR",     (0,1), (-1,-1), colors.HexColor("#1f2937")),
+        ("TEXTCOLOR",     (0,1), (-1,-1), dark),
         ("FONTSIZE",      (0,0), (-1,-1), 9),
-        ("ROWBACKGROUNDS",(0,1), (-1,-2), [colors.HexColor("#f9fafb"), colors.white]),
-        ("BACKGROUND",    (0,-1), (-1,-1), colors.HexColor("#fff0f3")),
+        ("ROWBACKGROUNDS",(0,1), (-1,-2), [colors.white, colors.HexColor("#f7f5ec")]),
+        ("BACKGROUND",    (0,-1),(-1,-1), colors.HexColor(CREAM)),
         ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#d1d5db")),
         ("BOTTOMPADDING", (0,0), (-1,-1), 5),
         ("TOPPADDING",    (0,0), (-1,-1), 5),
@@ -943,7 +993,7 @@ def generate_pdf(total, classification):
     story.append(Spacer(1, 16))
 
     story.append(Paragraph("Stage-by-Stage Analysis", h2_style))
-    story.append(HRFlowable(width="100%", thickness=0.5, color=c3, spaceAfter=8))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#d1d5db"), spaceAfter=8))
 
     for key, label in zip(STAGE_KEYS, STAGES):
         answer             = st.session_state.answers.get(key, "No answer recorded")
@@ -954,8 +1004,8 @@ def generate_pdf(total, classification):
 
         ql   = {"correct": "✓ Optimal", "partial": "~ Adequate", "poor": "✗ Insufficient"}[quality]
         qcol = {"correct": colors.HexColor("#059669"),
-                "partial": colors.HexColor("#d97706"),
-                "poor":    colors.HexColor("#dc2626")}[quality]
+                "partial": colors.HexColor(GOLD),
+                "poor":    colors.HexColor(ORANGE)}[quality]
 
         story.append(Paragraph(f"{label} Stage — {tid}: {tname}", h2_style))
         dt = Table([
@@ -964,14 +1014,14 @@ def generate_pdf(total, classification):
             ["Points Awarded", f"{score} / 20"],
         ], colWidths=[38*mm, 122*mm])
         dt.setStyle(TableStyle([
-            ("FONTNAME",      (0,0), (0,-1), "Helvetica-Bold"),
+            ("FONTNAME",      (0,0), (0,-1),  "Helvetica-Bold"),
             ("FONTSIZE",      (0,0), (-1,-1), 9),
-            ("TEXTCOLOR",     (0,0), (0,-1),  colors.HexColor("#6b7280")),
-            ("TEXTCOLOR",     (1,0), (1,0),   colors.HexColor("#1f2937")),
+            ("TEXTCOLOR",     (0,0), (0,-1),  mute),
+            ("TEXTCOLOR",     (1,0), (1,0),   dark),
             ("TEXTCOLOR",     (1,1), (1,1),   qcol),
-            ("TEXTCOLOR",     (1,2), (1,2),   colors.HexColor("#1f2937")),
+            ("TEXTCOLOR",     (1,2), (1,2),   dark),
             ("FONTNAME",      (1,1), (1,1),   "Helvetica-Bold"),
-            ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor("#f9fafb")),
+            ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor("#fafaf6")),
             ("BOTTOMPADDING", (0,0), (-1,-1), 4),
             ("TOPPADDING",    (0,0), (-1,-1), 4),
             ("LEFTPADDING",   (0,0), (-1,-1), 8),
@@ -979,7 +1029,7 @@ def generate_pdf(total, classification):
         story.append(dt)
         story.append(Spacer(1, 6))
         story.append(Paragraph(f"<b>Impact Analysis:</b> {analysis_text}", body_style))
-        story.append(HRFlowable(width="100%", thickness=0.3, color=c3, spaceAfter=6))
+        story.append(HRFlowable(width="100%", thickness=0.3, color=colors.HexColor("#e5e7eb"), spaceAfter=6))
 
     story.append(Paragraph("Recommendations", h2_style))
     recs = {
@@ -990,7 +1040,7 @@ def generate_pdf(total, classification):
     }
     story.append(Paragraph(recs[classification], body_style))
     story.append(Spacer(1, 20))
-    story.append(HRFlowable(width="100%", thickness=2, color=r, spaceAfter=6))
+    story.append(HRFlowable(width="100%", thickness=2, color=orange, spaceAfter=6))
     story.append(Paragraph(
         "This report is confidential and produced for training purposes only. CGI Group Inc. — Cybersecurity Practice.",
         label_style))
@@ -1003,10 +1053,10 @@ def generate_pdf(total, classification):
     return buffer
 
 def classify(score):
-    if score >= 90: return ("Incident Response Ready",          "#34d399")
-    if score >= 70: return ("Operationally Aware",              "#34d399")
-    if score >= 50: return ("Needs Procedural Reinforcement",   "#fbbf24")
-    return                  ("High Organisational Risk Profile", "#f87171")
+    if score >= 90: return ("Incident Response Ready",          "#059669")
+    if score >= 70: return ("Operationally Aware",              "#059669")
+    if score >= 50: return ("Needs Procedural Reinforcement",   GOLD)
+    return                  ("High Organisational Risk Profile", ORANGE)
 
 # ─────────────────────────────────────────────
 #  PAGES
@@ -1059,7 +1109,7 @@ elif st.session_state.stage == 5:
 
     st.markdown(f"""
     <div class="result-card">
-        <div class="big-score">{total}<span style="font-size:1.5rem;color:{C4}">/100</span></div>
+        <div class="big-score">{total}<span style="font-size:1.5rem;color:{TEXT_MUTED}">/100</span></div>
         <div class="classification" style="color:{colour}">{classification}</div>
         <div class="sub">
             {st.session_state.name} &nbsp;|&nbsp; {datetime.now().strftime("%d %b %Y, %H:%M UTC")}<br/>
@@ -1088,9 +1138,9 @@ elif st.session_state.stage == 5:
         st.markdown(f"""
         <div class="decision-row">
             <span>{icon} <strong>{label}</strong>
-            <span style="color:{C4};font-size:0.8rem">&nbsp;{tid}</span>
+            <span style="color:{TEXT_MUTED};font-size:0.8rem">&nbsp;{tid}</span>
             — {answer}</span>
-            <span style="color:{CGI_RED};font-weight:700">{score}/20</span>
+            <span style="color:{ORANGE};font-weight:700">{score}/20</span>
         </div>
         """, unsafe_allow_html=True)
 
