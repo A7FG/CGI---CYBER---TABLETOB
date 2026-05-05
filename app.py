@@ -23,8 +23,14 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-CGI_RED  = "#DC1431"
-CGI_DARK = "#1A1A1A"
+CGI_RED   = "#DC1431"
+CGI_DARK  = "#1A1A1A"
+BG_MAIN   = "#f0f4f8"
+BG_CARD   = "#ffffff"
+BG_HEADER = "#ffffff"
+TEXT_MAIN = "#1a202c"
+TEXT_SUB  = "#4a5568"
+BORDER    = "#e2e8f0"
 
 # Embed logo as base64 so it loads with no external dependency
 def get_logo_base64():
@@ -43,8 +49,8 @@ st.markdown(f"""
 <style>
 html, body, [class*="css"] {{
     font-family: 'Segoe UI', sans-serif;
-    background-color: #0d1117;
-    color: #e6edf3;
+    background-color: {BG_MAIN};
+    color: {TEXT_MAIN};
 }}
 .block-container {{
     max-width: 860px;
@@ -52,9 +58,9 @@ html, body, [class*="css"] {{
     margin: auto;
 }}
 .header-banner {{
-    background: linear-gradient(135deg, {CGI_DARK} 0%, #1f2937 100%);
-    border: 1px solid #30363d;
-    border-top: 4px solid {CGI_RED};
+    background: {BG_HEADER};
+    border: 1px solid {BORDER};
+    border-top: 5px solid {CGI_RED};
     border-radius: 12px;
     padding: 1.6rem 2.5rem;
     margin-bottom: 2rem;
@@ -62,29 +68,43 @@ html, body, [class*="css"] {{
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }}
 .header-text h1 {{
     font-size: 1.5rem;
     font-weight: 700;
-    color: #ffffff;
+    color: {TEXT_MAIN};
     margin: 0 0 0.2rem;
 }}
 .header-text p {{
     font-size: 0.85rem;
-    color: #8b949e;
+    color: {TEXT_SUB};
     margin: 0;
 }}
-.cgi-logo-img {{
-    height: 38px;
-    filter: brightness(0) invert(1);
+.cgi-logo-text {{
+    font-size: 2rem;
+    font-weight: 900;
+    color: {CGI_RED};
+    letter-spacing: -0.05em;
+    font-family: 'Segoe UI', sans-serif;
+    line-height: 1;
+}}
+.cgi-logo-sub {{
+    font-size: 0.55rem;
+    color: #aaaaaa;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: right;
+    margin-top: 2px;
 }}
 .stage-card {{
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-left: 4px solid {CGI_RED};
+    background: {BG_CARD};
+    border: 1px solid {BORDER};
+    border-left: 5px solid {CGI_RED};
     border-radius: 10px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }}
 .stage-card h3 {{
     color: {CGI_RED};
@@ -94,20 +114,20 @@ html, body, [class*="css"] {{
     letter-spacing: 0.08em;
 }}
 .stage-card .timestamp {{
-    color: #f0883e;
+    color: #e07b00;
     font-size: 0.85rem;
     font-family: monospace;
     margin-bottom: 0.8rem;
 }}
 .stage-card p {{
-    color: #c9d1d9;
+    color: {TEXT_SUB};
     font-size: 0.95rem;
     line-height: 1.6;
     margin: 0;
 }}
 .mitre-tag {{
     display: inline-block;
-    background: #1a0a0f;
+    background: #fff0f3;
     border: 1px solid {CGI_RED};
     color: {CGI_RED};
     border-radius: 4px;
@@ -124,40 +144,42 @@ html, body, [class*="css"] {{
     line-height: 1.6;
 }}
 .feedback-correct {{
-    background: #0d2818;
-    border: 1px solid #238636;
-    color: #3fb950;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #166534;
 }}
 .feedback-partial {{
-    background: #1c1a00;
-    border: 1px solid #9e6a03;
-    color: #e3b341;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
 }}
 .feedback-poor {{
-    background: #1c0a0a;
-    border: 1px solid #6e1a1a;
-    color: #f85149;
+    background: #fff1f2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
 }}
 .timer-box {{
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: {BG_CARD};
+    border: 1px solid {BORDER};
     border-radius: 8px;
     padding: 0.6rem 1.2rem;
     font-size: 1rem;
     font-family: monospace;
-    color: #e6edf3;
+    color: {TEXT_MAIN};
     margin-bottom: 1rem;
     display: inline-block;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }}
-.timer-warning {{ color: #f0883e !important; }}
-.timer-critical {{ color: #f85149 !important; }}
+.timer-warning {{ color: #d97706 !important; font-weight: 700; }}
+.timer-critical {{ color: {CGI_RED} !important; font-weight: 700; }}
 .result-card {{
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: {BG_CARD};
+    border: 1px solid {BORDER};
     border-radius: 12px;
     padding: 2rem;
     text-align: center;
     margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }}
 .result-card .big-score {{
     font-size: 4rem;
@@ -172,21 +194,22 @@ html, body, [class*="css"] {{
 }}
 .result-card .sub {{
     font-size: 0.88rem;
-    color: #8b949e;
+    color: {TEXT_SUB};
     margin-top: 0.3rem;
 }}
 .decision-row {{
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: {BG_CARD};
+    border: 1px solid {BORDER};
     border-radius: 8px;
     padding: 1rem 1.4rem;
     margin-bottom: 0.7rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }}
 .cert-banner {{
-    background: linear-gradient(135deg, #1a0a0f, #2a0d18);
+    background: linear-gradient(135deg, #fff0f3, #ffe4e8);
     border: 2px solid {CGI_RED};
     border-radius: 12px;
     padding: 2rem;
@@ -199,13 +222,13 @@ html, body, [class*="css"] {{
     margin: 0 0 0.5rem;
 }}
 .cert-banner p {{
-    color: #c9d1d9;
+    color: {TEXT_SUB};
     margin: 0;
     font-size: 0.95rem;
 }}
 [data-testid="stSidebar"] {{
-    background: #0d1117;
-    border-right: 1px solid #21262d;
+    background: #ffffff;
+    border-right: 1px solid {BORDER};
 }}
 [data-testid="stSidebar"] h2 {{
     color: {CGI_RED};
@@ -218,7 +241,7 @@ div[data-testid="stForm"] {{
     border: none;
     padding: 0;
 }}
-.stRadio label {{ color: #c9d1d9 !important; }}
+.stRadio label {{ color: {TEXT_MAIN} !important; }}
 .stButton > button {{
     background: {CGI_RED};
     color: #fff;
@@ -232,19 +255,19 @@ div[data-testid="stForm"] {{
 }}
 .stButton > button:hover {{ background: #b01228; }}
 .stTextInput > div > div > input {{
-    background: #161b22;
-    color: #e6edf3;
-    border: 1px solid #30363d;
+    background: #ffffff;
+    color: {TEXT_MAIN};
+    border: 1px solid {BORDER};
     border-radius: 6px;
 }}
 code, pre {{
-    background: #161b22 !important;
-    border: 1px solid #30363d;
+    background: #f8fafc !important;
+    border: 1px solid {BORDER};
     border-radius: 6px;
-    color: #79c0ff !important;
+    color: #be185d !important;
     font-size: 0.85rem !important;
 }}
-hr {{ border-color: #21262d; }}
+hr {{ border-color: {BORDER}; }}
 </style>
 """, unsafe_allow_html=True)
 
