@@ -412,47 +412,52 @@ div[data-testid="stForm"] {{
     font-weight: 600 !important;
 }}
 
-/* ── Code blocks (main area — cream background, navy text) ── */
-.main code,
-.main pre,
-.main .stCode,
-.main .stCode pre,
-.main [data-testid="stCodeBlock"],
-.main [data-testid="stCodeBlock"] pre,
-.main [data-testid="stCodeBlock"] code {{
-    background: {CREAM} !important;
-    background-color: {CREAM} !important;
-    border: 1.5px solid {GOLD} !important;
+/* ── Code blocks (cream background, navy text) — maximum specificity ── */
+div[data-testid="stCode"],
+div[data-testid="stCode"] pre,
+div[data-testid="stCode"] code,
+div[data-testid="stCodeBlock"],
+div[data-testid="stCodeBlock"] pre,
+div[data-testid="stCodeBlock"] code,
+[class*="stCodeBlock"],
+[class*="stCodeBlock"] pre,
+[class*="stCodeBlock"] code,
+[class*="stCode"] pre,
+[class*="stCode"] code,
+.element-container pre,
+.element-container code,
+.stMarkdown pre,
+.stMarkdown code {{
+    background: #EFE2BA !important;
+    background-color: #EFE2BA !important;
+    border: 1.5px solid #D79922 !important;
     border-radius: 8px !important;
-    color: {BLUE} !important;
-    font-size: 0.85rem !important;
+    color: #4056A1 !important;
 }}
 
-/* ── Override syntax highlighter token colours — force navy on everything ── */
-.main [data-testid="stCodeBlock"] *,
-.main pre *,
-.main pre code *,
-.main code * {{
-    color: {BLUE} !important;
+div[data-testid="stCode"] *,
+div[data-testid="stCodeBlock"] *,
+[class*="stCodeBlock"] *,
+[class*="stCode"] *,
+.element-container pre *,
+.element-container code *,
+.stMarkdown pre *,
+.stMarkdown code * {{
+    color: #4056A1 !important;
     background: transparent !important;
     background-color: transparent !important;
     text-shadow: none !important;
 }}
 
-/* ── Copy button (top right of code blocks) — navy on cream ── */
-.main [data-testid="stCodeBlock"] button,
-.main [data-testid="stCodeBlock"] button svg,
-.main [data-testid="stCodeBlock"] button svg path {{
-    color: {BLUE} !important;
-    fill: {BLUE} !important;
-    opacity: 0.65 !important;
-}}
-.main [data-testid="stCodeBlock"] button:hover {{
-    opacity: 1 !important;
-    background: rgba(64,86,161,0.12) !important;
+div[data-testid="stCodeBlock"] button,
+div[data-testid="stCodeBlock"] button *,
+[class*="stCodeBlock"] button,
+[class*="stCodeBlock"] button * {{
+    color: #4056A1 !important;
+    fill: #4056A1 !important;
+    background: transparent !important;
 }}
 
-/* ── Sidebar inline code (high contrast on blue) ── */
 [data-testid="stSidebar"] code {{
     background: rgba(255,255,255,0.18) !important;
     color: #ffffff !important;
@@ -801,7 +806,23 @@ def render_stage(stage_idx):
     """, unsafe_allow_html=True)
 
     if artifact_map[key]:
-        st.code(artifact_map[key], language="text")
+        # Custom artefact box — guaranteed cream/navy styling, no Streamlit override issues
+        escaped = artifact_map[key].replace("<", "&lt;").replace(">", "&gt;")
+        st.markdown(f"""
+        <div style="
+            background: {CREAM};
+            border: 1.5px solid {GOLD};
+            border-radius: 10px;
+            padding: 1.2rem 1.5rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.85rem;
+            color: {BLUE};
+            white-space: pre-wrap;
+            line-height: 1.5;
+            overflow-x: auto;
+        ">{escaped}</div>
+        """, unsafe_allow_html=True)
 
     already_answered = st.session_state.showed_feedback[key]
     order            = st.session_state.shuffled_orders[key]
