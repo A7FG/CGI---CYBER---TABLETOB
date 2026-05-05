@@ -772,34 +772,35 @@ def render_stage(stage_idx):
 # ─────────────────────────────────────────────
 def generate_certificate(name, role, score, classification):
     buffer = BytesIO()
-    # Landscape A4, no margins — the certificate IS the page
-    doc    = SimpleDocTemplate(buffer, pagesize=(297*mm, 210*mm),
-                               leftMargin=0, rightMargin=0,
-                               topMargin=0,  bottomMargin=0)
+    # Landscape A4
+    PAGE_W, PAGE_H = 297*mm, 210*mm
+    doc = SimpleDocTemplate(buffer, pagesize=(PAGE_W, PAGE_H),
+                            leftMargin=10*mm, rightMargin=10*mm,
+                            topMargin=10*mm,  bottomMargin=10*mm)
     styles = getSampleStyleSheet()
 
-    # Full-page coloured background as a single table cell
+    # One full-bleed cell that sits inside the page margins
     full_page = Table([[Paragraph(f"""
         <para align="center">
-        <font size="32" color="{CGI_RED}"><b>Certificate of Completion</b></font><br/><br/>
+        <font size="30" color="{CGI_RED}"><b>Certificate of Completion</b></font><br/><br/>
         <font size="12" color="{C4}">CGI Cybersecurity Tabletop Exercise</font><br/>
-        <font size="10" color="{C4}">Spearphishing Incident Response Simulation</font><br/><br/><br/>
+        <font size="10" color="{C4}">Spearphishing Incident Response Simulation</font><br/><br/>
         <font size="11" color="{C5}">This certifies that</font><br/><br/>
-        <font size="26" color="#ffffff"><b>{name}</b></font><br/>
+        <font size="24" color="#ffffff"><b>{name}</b></font><br/>
         <font size="10" color="{C4}">{role if role else 'Participant'}</font><br/><br/>
         <font size="11" color="{C5}">has successfully completed the exercise with a score of</font><br/><br/>
         <font size="22" color="{CGI_RED}"><b>{score}/100</b></font><br/>
-        <font size="13" color="#ffffff"><b>{classification}</b></font><br/><br/><br/>
+        <font size="13" color="#ffffff"><b>{classification}</b></font><br/><br/>
         <font size="10" color="{C4}">Completed: {datetime.now().strftime('%d %B %Y')}</font><br/>
         <font size="10" color="{C4}">MITRE ATT&amp;CK Framework — Spearphishing Kill Chain (T1566.001)</font><br/><br/>
         <font size="9" color="{C4}">Issued by CGI Cybersecurity Practice &nbsp;|&nbsp; Confidential — Training Use Only</font><br/>
         <font size="9" color="{C4}">Developed by 5yber &nbsp;|&nbsp; Delivered in partnership with CGI Cybersecurity Practice</font>
         </para>
-    """, styles["Normal"])]], colWidths=[297*mm], rowHeights=[210*mm])
+    """, styles["Normal"])]], colWidths=[PAGE_W - 20*mm], rowHeights=[PAGE_H - 20*mm])
 
     full_page.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor(C1)),
-        ("BOX",           (0,0), (-1,-1), 6, colors.HexColor(CGI_RED)),
+        ("BOX",           (0,0), (-1,-1), 5, colors.HexColor(CGI_RED)),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
         ("LEFTPADDING",   (0,0), (-1,-1), 30),
         ("RIGHTPADDING",  (0,0), (-1,-1), 30),
