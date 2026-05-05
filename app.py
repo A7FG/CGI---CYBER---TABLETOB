@@ -412,16 +412,35 @@ div[data-testid="stForm"] {{
     font-weight: 600 !important;
 }}
 
-/* ── Code blocks ── */
-code, pre, .stCode, .stCode pre {{
-    background: #1e1e2e !important;
+/* ── Code blocks (main area — cream on near-black for clear contrast) ── */
+.main code,
+.main pre,
+.main .stCode,
+.main .stCode pre,
+.main [data-testid="stCodeBlock"],
+.main [data-testid="stCodeBlock"] pre,
+.main [data-testid="stCodeBlock"] code {{
+    background: #1a1d2e !important;
     border: 1px solid {BLUE} !important;
     border-radius: 8px !important;
-    color: {CREAM} !important;
+    color: #ffffff !important;
     font-size: 0.85rem !important;
 }}
-code {{
-    color: {CREAM} !important;
+.main [data-testid="stCodeBlock"] code span,
+.main pre code,
+.main pre code span {{
+    color: #ffffff !important;
+    background: transparent !important;
+}}
+
+/* ── Sidebar inline code (high contrast on blue) ── */
+[data-testid="stSidebar"] code {{
+    background: rgba(255,255,255,0.18) !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 0.15rem 0.5rem !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
 }}
 
 /* ── Alerts ── */
@@ -498,7 +517,7 @@ Classification: Potential data exfiltration event""",
 
 STAGES     = ["Detection", "Response", "Containment", "Communication", "Recovery"]
 STAGE_KEYS = ["detection", "response", "containment", "communication", "recovery"]
-TIMER_SECS = 60
+TIMER_SECS = 150
 
 QUESTIONS = {
     "detection": {
@@ -674,9 +693,6 @@ def render_sidebar():
         st.markdown("---")
         total = sum(st.session_state.scores.values())
         st.metric("Current Score", f"{total} / 100")
-        elapsed = int((datetime.now() - st.session_state.start_time).total_seconds())
-        m, s = divmod(elapsed, 60)
-        st.metric("Elapsed Time", f"{m:02d}:{s:02d}")
         st.markdown("---")
         st.markdown("**Progress**")
         for i, (key, label) in enumerate(zip(STAGE_KEYS, STAGES)):
@@ -1107,13 +1123,22 @@ elif st.session_state.stage == 5:
     total          = sum(st.session_state.scores.values())
     classification, colour = classify(total)
 
+    # ── Elapsed time for the whole exercise ──
+    elapsed_seconds = int((datetime.now() - st.session_state.start_time).total_seconds())
+    e_m, e_s = divmod(elapsed_seconds, 60)
+    if e_m >= 60:
+        e_h, e_m = divmod(e_m, 60)
+        elapsed_str = f"{e_h}h {e_m}m {e_s}s"
+    else:
+        elapsed_str = f"{e_m}m {e_s}s"
+
     st.markdown(f"""
     <div class="result-card">
         <div class="big-score">{total}<span style="font-size:1.5rem;color:{TEXT_MUTED}">/100</span></div>
         <div class="classification" style="color:{colour}">{classification}</div>
         <div class="sub">
             {st.session_state.name} &nbsp;|&nbsp; {datetime.now().strftime("%d %b %Y, %H:%M UTC")}<br/>
-            MITRE ATT&CK — Spearphishing Kill Chain (T1566.001)
+            ⏱ Total time: <strong>{elapsed_str}</strong> &nbsp;|&nbsp; MITRE ATT&CK — Spearphishing Kill Chain (T1566.001)
         </div>
     </div>
     """, unsafe_allow_html=True)
