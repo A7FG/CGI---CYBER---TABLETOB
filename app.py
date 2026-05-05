@@ -412,7 +412,7 @@ div[data-testid="stForm"] {{
     font-weight: 600 !important;
 }}
 
-/* ── Code blocks (main area — force white text everywhere) ── */
+/* ── Code blocks (main area — cream background, navy text) ── */
 .main code,
 .main pre,
 .main .stCode,
@@ -420,35 +420,36 @@ div[data-testid="stForm"] {{
 .main [data-testid="stCodeBlock"],
 .main [data-testid="stCodeBlock"] pre,
 .main [data-testid="stCodeBlock"] code {{
-    background: #1a1d2e !important;
-    border: 1px solid {BLUE} !important;
+    background: {CREAM} !important;
+    background-color: {CREAM} !important;
+    border: 1.5px solid {GOLD} !important;
     border-radius: 8px !important;
-    color: #ffffff !important;
+    color: {BLUE} !important;
     font-size: 0.85rem !important;
 }}
 
-/* ── Override syntax highlighter token colours ── */
+/* ── Override syntax highlighter token colours — force navy on everything ── */
 .main [data-testid="stCodeBlock"] *,
 .main pre *,
 .main pre code *,
 .main code * {{
-    color: #ffffff !important;
+    color: {BLUE} !important;
     background: transparent !important;
     background-color: transparent !important;
     text-shadow: none !important;
 }}
 
-/* ── Copy button (top right of code blocks) ── */
+/* ── Copy button (top right of code blocks) — navy on cream ── */
 .main [data-testid="stCodeBlock"] button,
 .main [data-testid="stCodeBlock"] button svg,
 .main [data-testid="stCodeBlock"] button svg path {{
-    color: #ffffff !important;
-    fill: #ffffff !important;
-    opacity: 0.7 !important;
+    color: {BLUE} !important;
+    fill: {BLUE} !important;
+    opacity: 0.65 !important;
 }}
 .main [data-testid="stCodeBlock"] button:hover {{
     opacity: 1 !important;
-    background: rgba(255,255,255,0.1) !important;
+    background: rgba(64,86,161,0.12) !important;
 }}
 
 /* ── Sidebar inline code (high contrast on blue) ── */
